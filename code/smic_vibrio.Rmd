@@ -1,0 +1,105 @@
+---
+title: "smic_vibrio"
+output: html_document
+date: "2026-03-15"
+---
+
+
+```{r }
+
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs.rds")
+
+```
+
+
+```{r}
+library(microbiome); packageVersion("microbiome")
+library(RColorBrewer)
+library(dplyr)
+library(tidyr)
+library(phyloseq)
+library(microViz)
+library(ggpubr)
+library(reshape2)
+```
+
+to look at vibrio relative abundances across both sea star species 
+```{r}
+
+decontam_filter_nonegs
+
+seastars_ps <-  decontam_filter_nonegs %>%
+  ps_filter(Host %in% c("Pisaster ochraceus", "Dermasterias imbricata", "Seawater"))
+
+seastars_ps_rel <- transform_sample_counts(seastars_ps, function(x) x / sum(x))
+
+seastars_ps_glom <-speedyseq::tax_glom(seastars_ps_rel, taxrank = "Species")
+
+ps_vibrio <- subset_taxa(seastars_ps_glom, Species == "Vibrio_pectenicida")
+
+#Melt to long format
+seastars_vibrio <- psmelt(ps_vibrio)
+
+seastars_vibrio
+
+#make plot
+stars_vibrio_plot<-ggplot(seastars_vibrio, aes(x = Host, 
+               y = Abundance, 
+               color = Host)) +
+  geom_jitter(width = 0.2, alpha = 0.4) +
+  theme_classic() +
+  ylab("Vpec Relative Abundance") +
+  #facet_wrap(~SiteType) +
+  scale_color_manual(values = c("#AD002AFF", "#925E9FFF", "#0099B4FF")) + 
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("D. imbricata", "P. ochraceus", "Seawater")) +
+   theme(strip.background = element_blank()) +
+  theme(axis.title.x = element_blank())+
+  ggtitle("Host")
+
+stars_vibrio_plot
+
+#now only within pisater, wasting levels
+
+pisaster_vibrio <- seastars_vibrio %>%
+  filter(Host %in% c("Pisaster ochraceus"))
+
+#plot Vibrio across wasting categories
+pis_vibrio_plot<-ggplot(pisaster_vibrio, aes(x = WastingCategory, 
+               y = Abundance, 
+               color = WastingCategory)) +
+  geom_jitter(width = 0.2, alpha = 0.4) +
+  theme_classic() +
+  ylab("Vpec Relative Abundance") +
+  #facet_wrap(~SiteType) +
+  scale_color_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"),
+    name = "Wasting Category") + theme(legend.position = "none") +
+  theme(strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=0)) +
+  theme(axis.title.x = element_blank())+
+  ggtitle("Wasting Category")
+
+pis_vibrio_plot
+
+pis_vibrio_violin<-ggplot(pisaster_vibrio, aes(x = WastingCategory, 
+               y = Abundance, 
+               color = WastingCategory)) +
+  geom_violin() +
+  theme_classic() +
+  ylab("Vpec Relative Abundance") +
+  #facet_wrap(~SiteType) +
+  scale_color_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"),
+    name = "Wasting Category") + theme(legend.position = "none") +
+  theme(strip.background = element_blank()) +
+  theme(strip.text.x = element_text(size=0)) +
+  theme(axis.title.x = element_blank())+
+  ggtitle("Wasting Category")
+
+pis_vibrio
+
+vibrio_panel<-ggarrange(stars_vibrio_plot, pis_vibrio_plot, ncol=1, align = "v", labels = c("a", "b"))
+
+ggsave("vibrio_panel.pdf", dpi=300, width=10, height=8, units="in")
+
+```
+
