@@ -8,8 +8,8 @@ Summary
 
 ### Added
 
+*2026-3-25 added all required csv files and code chunks associated with the manuscript
 *
-* 
 *
 
 ### Fixed
@@ -22,4 +22,4 @@ Summary
 
 ### Removed
 
-*
+*2026-3-25 removed the docs folder from the repositiry as it was not needed
