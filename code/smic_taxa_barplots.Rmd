@@ -1,0 +1,148 @@
+---
+title: "smic_taxa_barplots"
+output: html_document
+date: "2026-03-14"
+---
+
+```{r}
+
+#read in the required QC'ed phyloseq object
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs.rds")
+
+```
+
+load required libraries
+
+```{r}
+library(phyloseq)
+library(ggplot2)
+library(microViz)
+library(dplyr)
+library(ggpubr)
+
+```
+
+
+```{r subset to species}
+#using the prevalance filtered dataset, subset Pisaster only
+
+#want both healthy and wasting disease data here
+pis_comp <- ps_filter(decontam_filter_nonegs, Host == "Pisaster ochraceus")
+
+pis_genus <- tax_glom(pis_comp, taxrank = "Genus")
+
+pis_genus_rel<-microbiome::transform(pis_genus, "compositional")
+
+#Melt phyloseq object to long format
+df_pis_genus_rel <- psmelt(pis_genus_rel)
+
+df_pis_genus_rel
+
+#summarize by WastingScore
+
+df_sum_pis_wasting <- df_pis_genus_rel %>%
+  group_by(SiteType, WastingScore, Genus) %>%
+  summarise(Abundance = mean(Abundance), .groups = "drop")
+
+#collapse rare taxa into "Other" - definitely need to do this or there are way too many taxa!
+top_genera_pis_wasting <- df_sum_pis_wasting %>%
+  group_by(Genus) %>%
+  summarise(mean_abund = mean(Abundance)) %>%
+  arrange(desc(mean_abund)) %>%
+  slice_head(n = 10) %>%
+  pull(Genus)
+
+top_genera_pis_wasting
+
+df_sum_pis_wasting$Genus <- ifelse(df_sum_pis_wasting$Genus %in% top_genera_pis_wasting,
+            df_sum_pis_wasting$Genus, "Other")
+
+unique(df_sum_pis_wasting$Genus)
+
+df_sum_pis_wasting$Genus = factor(df_sum_pis_wasting$Genus, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Psychrilyobacter", "Rubritalea", "Saprospiraceae Family","Reichenbachiella","Vibrio","Vibrionaceae Family","Other" )) 
+
+
+#Make the stacked bar chart
+wastingscore_region<-ggplot(df_sum_pis_wasting, aes(x = WastingScore,
+                   y = Abundance,
+                   fill = Genus)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(x = "Wasting Score",
+       y = "Proportion",
+       fill = "Genus") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    legend.position = "right"
+  ) + scale_fill_brewer(palette = "Spectral") +
+  facet_wrap(~SiteType) +
+  theme(strip.background = element_blank())
+
+
+```
+
+
+```{r summarize by swab type instead of wasting score}
+
+#summarize by swab / dermis type
+
+df_sum_pis_swabtype <- df_pis_genus_rel %>%
+  group_by(SiteType, DermisType2, Genus) %>%
+  summarise(Abundance = mean(Abundance), .groups = "drop")
+
+#collapse rare taxa into "Other" - definitely need to do this or there are way too many taxa!
+top_genera_pis_swabtype <- df_sum_pis_swabtype %>%
+  group_by(Genus) %>%
+  summarise(mean_abund = mean(Abundance)) %>%
+  arrange(desc(mean_abund)) %>%
+  slice_head(n = 10) %>%
+  pull(Genus)
+
+top_genera_pis_swabtype
+
+df_sum_pis_swabtype$Genus <- ifelse(df_sum_pis_swabtype$Genus %in% top_genera_pis_swabtype,
+            df_sum_pis_swabtype$Genus, "Other")
+
+unique(df_sum_pis_swabtype$Genus)
+
+df_sum_pis_swabtype$Genus = factor(df_sum_pis_swabtype$Genus, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Flavobacteriaceae Family", "Rubritalea", "Saprospiraceae Family","Reichenbachiella","Vibrio","Vibrionaceae Family","Other" )) 
+
+
+#Re-order dermis type
+df_sum_pis_swabtype$DermisType2 = factor(df_sum_pis_swabtype$DermisType2, levels = c("H_healthy","H_diseased","L_diseased"))
+
+#Make the stacked bar chart
+ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
+                   y = Abundance,
+                   fill = Genus)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(x = "SwabType_SeaStarStatus",
+       y = "Proportion",
+       fill = "Genus") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = 0.5),
+    legend.position = "right"
+  ) + scale_fill_brewer(palette = "Spectral") +
+  facet_grid(~SiteType)
+
+```
+
+Combine the taxa relative abundance plot with richness plot 
+
+```{r}
+
+richness_wasting_plot
+wastingscore_region
+
+
+wasting_panel<-ggarrange(richness_wasting_plot, wastingscore_region, common.legend=FALSE, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
+
+wasting_panel
+
+ggsave("wasting_panel.pdf", dpi=300, width=10, height=8, units="in")
+
+```
+

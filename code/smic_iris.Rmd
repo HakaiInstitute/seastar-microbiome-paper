@@ -1,0 +1,145 @@
+---
+title: "Iris Plots"
+author: "Colleen Kellogg"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{R packages}
+library(tidyverse)
+library(microViz)
+library(phyloseq)
+library(speedyseq)
+library(rcartocolor)
+library(RColorBrewer)
+
+```
+
+```{R load data}
+
+# smic<-readRDS("decontam_filter_nonegs.rds")
+smicpf<-readRDS("decontam_filter_nonegs_prev.rds")
+
+```
+
+```{R Pisaster Class Iris Plots}
+
+#### get top classes across sea stars #### 
+
+#working with the prevalence filtered data, since that is what Carolyn used for beta diversity
+
+#for each host so i can create a color palette that works for both iris plots
+
+pis_top <- tax_top((smicpf %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(Host == "Pisaster ochraceus" & WastingScore == 0) %>%
+  speedyseq::tax_glom(taxrank = "Class")), 
+  n = 10, rank="Class")
+
+
+derm_top <- tax_top((smicpf %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(Host == "Dermasterias imbricata" & WastingScore == 0) %>%
+  speedyseq::tax_glom(taxrank = "Class")), 
+  n = 10, rank="Class")
+
+#### top class color palette ####
+
+# combine top taxa and remove dupicates. or probably could just have set each to n = 12 and there would have been full overlap. :)
+
+top_classes<-c(str_unique(c(pis_top,derm_top)),"Other") #top classes
+palette<-c(rev(colorRampPalette(brewer.pal(11,"Spectral"))(12)),"lightgrey") #13 color palette
+top_class_pal <- structure(palette, .Names = top_classes) #combine the two so that this can be use to specify color by taxa
+
+
+#### pisaster ordination and iris ####
+
+#healthy only 
+pis_ord <- smicpf %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(Host == "Pisaster ochraceus" & WastingScore == 0) %>% 
+  dist_calc("bray") %>%
+  ord_calc(method = "NMDS")
+
+pis_iris<-ord_plot_iris(
+  data = pis_ord,
+  tax_level = "Class",
+  n_taxa = 12,
+  anno_colour = "SiteType",
+  tax_order = top_classes,
+  palette = top_class_pal
+) +
+  scale_color_manual(values = c("#a6bddb","#1c9099"))
+
+pis_iris
+
+# ggsave(filename = "PISASTER-iris-plot-class-spectral.pdf",pis_iris, dpi = 300, width = 8, height = 6)
+
+```
+
+```{R Dermasterias Class Iris Plots}
+#### dermasterias ordination and iris ####
+
+#healthy only
+derm_ord <- smicpf  %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(Host == "Dermasterias imbricata" & WastingScore == 0) %>% #healthy only
+  dist_calc("bray") %>%
+  ord_calc(method = "NMDS")
+
+derm_iris<-ord_plot_iris(
+  data = derm_ord,
+  tax_level = "Class",
+  n_taxa = 12,
+  tax_order = top_classes,
+  anno_colour = "SiteType",
+  palette = top_class_pal
+) +
+  scale_color_manual(values = c("#a6bddb","#1c9099"))
+
+# ggsave(filename = "DERMASTERIAS-iris-plot-class_spectral.pdf",derm_iris, dpi = 300, width = 8, height = 6)
+
+#### make iris panel ####
+iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 1, common.legend = TRUE, legend = "right", labels = c("a. Pisaster ochraceus","b. Dermasterias imbricata"), font.label = list(face ="plain",size = 10), hjust = -0.25)
+
+iris_grid
+
+ggsave("iris_grid_nmds.jpeg", iris_grid, height = 8, width = 6)
+```
+
+```{R Healthy Stars and Seawater Class Iris Plot}
+#### all healthy stars and seawater ####
+
+top_all<-tax_top((smicpf %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(WastingScore == 0 | Host == "Seawater") %>%
+  speedyseq::tax_glom(taxrank = "Class")), 
+  n = 13, rank="Class")
+
+top_all #scooping in "Nitrososphaeria" 
+top_allclass<-c(top_classes[1:12], "Nitrososphaeria","Other")
+palette14<-c(rev(colorRampPalette(brewer.pal(11,"Spectral"))(12)),"#7A0132", "lightgrey") #14 color palette
+top_allclass_pal <- structure(palette14, .Names = top_allclass) #combine the two so that this can be use to specify color by taxa
+
+#healthy only 
+all_ord <- smicpf %>%
+  transform_sample_counts(function(x) x / sum(x)) %>%
+  subset_samples(WastingScore == 0 | Host == "Seawater") %>% 
+  dist_calc("bray") %>%
+  ord_calc(method = "NMDS")
+
+all_iris<-ord_plot_iris(
+  data = all_ord,
+  tax_level = "Class",
+  n_taxa = 13,
+  anno_colour = "Host",
+  tax_order = top_allclass,
+  palette = top_allclass_pal
+) +
+  scale_color_manual(values = c("#AD002AFF","#925E9FFF", "#0099B4FF"))
+
+ggsave("all_host_iris_pcoa.pdf", all_iris, height = 5, width = 6)
+
+```
+
+
