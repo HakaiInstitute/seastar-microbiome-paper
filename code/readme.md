@@ -27,3 +27,6 @@ This Rmarkdown file is used to detect indicator taxa for each sea star species u
 
 'smic-compare-means.Rmd'
 This Rmarkdown file was used to determine differentially abundant taxa across wasting disease categories and tissue types. We used the wilcox_test function with the rstatix package and also calculated logfold change among pairs of categories to create the plots in Figure 5. 
+
+'smic_vibrio.Rmd'
+This Rmarkdown file is used to pull out ASVs that matched to Vibrio pectinicida, to plot it's relative abundance across hosts and wasting categories.
