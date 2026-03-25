@@ -1,0 +1,172 @@
+---
+title: "smic_core_microbiome"
+output: html_document
+date: "2026-03-13"
+---
+
+
+
+```{r }
+
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data/decontam_filter_nonegs.rds")
+
+```
+
+
+
+```{r}
+library(microbiome); packageVersion("microbiome")
+library(RColorBrewer)
+library(reshape)
+library(dplyr)
+library(tidyr)
+
+```
+
+
+Subset by sea star species
+```{r}
+
+healthy_derm  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Dermasterias imbricata" & DermisType2 == "H_healthy"))
+
+
+healthy_pisaster  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Pisaster ochraceus" & DermisType2 == "H_healthy"))
+
+```
+
+
+##### CORE MICROBIOME ANALYSIS FOR EACH HOST/ENVIRONMENT #####
+
+```{r core microbiome PISASTER HEALTHY}
+
+#first need to transform the data
+healthy_pisaster_trans <- microbiome::transform(healthy_pisaster, "compositional")
+
+# Agglomerate first -- since we have repeated Genera in the taxa table
+pisaster_healthy_genus <- tax_glom(healthy_pisaster_trans, "Genus")
+
+# Melt phyloseq object to data frame
+df_core_pisaster <- psmelt(pisaster_healthy_genus)
+
+# Detect core genera 
+core_genus_pisaster_healthy <- core_members(pisaster_healthy_genus, detection = 0.001, prevalence = 75/100)
+
+
+#### Option 1: Add a Core column to the melted data frame ####
+# Add a new column to df_core_pisaster data frame to indicate the core genera or other
+df_core_pisaster <- df_core_pisaster %>% mutate(Core = ifelse(OTU %in% core_genus_pisaster_healthy, Genus, "Other")) 
+
+#set plotting order
+unique(df_core_pisaster$Core)
+df_core_pisaster$Core = factor(df_core_pisaster$Core, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Yoonia-Loktanella", "Flavobacteriaceae Family", "Polaribacter", "Saprospiraceae Family", "Endozoicomonas","Reichenbachiella","Roseibacillus","Rubritalea","Other" ))                        
+
+# write.csv(df_core_pisaster, "df_core_pisaster.csv")
+
+# Plot everything
+
+#df_core_pisaster$Date <- as.Date(df_core_pisaster$Date, format="%Y-%m-%d")
+df_core_pisaster$YearMonth<-factor(df_core_pisaster$YearMonth)
+
+pis_core_plot<-df_core_pisaster %>%
+ggplot(aes(YearMonth, Abundance, fill = Core)) +
+  geom_bar(stat = "identity", position = "fill") +
+  theme_classic() +
+  scale_fill_manual(values = core_colors, drop = FALSE) +
+  facet_wrap(~SiteType) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+pis_core_plot
+```
+
+#now derm
+```{r}
+
+#first need to transform the data
+healthy_derm_trans <- microbiome::transform(healthy_derm, "compositional")
+
+# Agglomerate first -- since we have repeated Genera in the taxa table
+derm_healthy_genus <- tax_glom(healthy_derm_trans, "Genus")
+
+# Melt phyloseq object to data frame
+df_core_derm <- psmelt(derm_healthy_genus)
+
+# Detect core genera 
+core_genus_derm <- core_members(derm_healthy_genus, detection = 0.001, prevalence = 75/100)
+
+#### Option 1: Add a Core column to the melted data frame ####
+# Add a new column to df_core_pisaster data frame to indicate the core genera or other
+df_core_derm <- df_core_derm %>% mutate(Core = ifelse(OTU %in% core_genus_derm, Genus, "Other")) 
+
+#set plotting order
+unique(df_core_derm$Core)
+
+df_core_derm$Core = factor(df_core_derm$Core, levels = c("Saprospiraceae Family","Rubritalea", "Flavobacteriaceae Family", "Rhodobacteraceae Family","Other" ))                        
+
+# write.csv(df_core_pisaster, "df_core_pisaster.csv")
+
+# Plot everything
+
+df_core_derm$YearMonth<-factor(df_core_derm$YearMonth)
+
+derm_core_plot<-df_core_derm %>%
+ggplot(aes(YearMonth, Abundance, fill = Core)) +
+  geom_bar(stat = "identity", position = "fill") +
+  theme_classic()+
+  scale_fill_manual(values = core_colors, drop = FALSE) +
+  facet_wrap(~SiteType) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  ggtitle("Dermasterias imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+derm_core_plot
+
+ggarrange(pis_core_plot, derm_core_plot, ncol=1, common.legend=TRUE, align = "v", legend = "right", labels = c("A", "B"))
+
+#to make sure colors of core taxa are consistent when two species are combined
+core_levels <- c(
+  "Spirochaetia Class",
+  "Spirochaetaceae Family",
+  "Salinispira",
+  "Rhodobacteraceae Family",
+  "Yoonia-Loktanella",
+  "Flavobacteriaceae Family",
+  "Polaribacter",
+  "Saprospiraceae Family",
+  "Endozoicomonas",
+  "Reichenbachiella",
+  "Roseibacillus",
+  "Rubritalea",
+  "Other",
+  "NA"
+)
+
+
+df_core_derm$Core <- factor(df_core_derm$Core, levels = core_levels)
+df_core_pisaster$Core <- factor(df_core_pisaster$Core, levels = core_levels)
+
+core_colors <- c(
+  "Spirochaetia Class" = "#8B004B",
+  "Spirochaetaceae Family" = "#B2182B",
+  "Salinispira" = "#EF6548",
+  "Rhodobacteraceae Family" = "#F4A261",
+  "Yoonia-Loktanella" = "#E9C46A",
+  "Flavobacteriaceae Family" = "#F1E4A6",
+  "Polaribacter" = "#D9E4A5",
+  "Saprospiraceae Family" = "#B8DE8F",
+  "Endozoicomonas" = "#7FCDBB",
+  "Reichenbachiella" = "#41B6C4",
+  "Roseibacillus" = "#1D91C0",
+  "Rubritalea" = "#6A51A3",
+  "Other" = "grey80",
+  "NA" = "grey40"
+)
+```
+
+
+
+
+

@@ -1,0 +1,287 @@
+---
+title: "smic_initialQC"
+output: html_document
+date: "2026-03-12"
+---
+
+First we need to load the necessary files. 
+***Note that singletons were removed previously so are already taken out in these files.
+
+```{r load files}
+
+setwd("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data")
+
+asvfile <-read.csv("asvtable_NCM_smiconly-runs1to8.csv", row.names=1, header = TRUE) 
+taxfile <-as.matrix(read.csv("smic_runs1to8_silva138-1_taxonomy.csv",row.names=1,header = TRUE)) 
+mapfile <-read.csv("metadata_updated_2026.csv",row.names = 1, header=TRUE)
+
+mapfile$Date <- as.Date(mapfile$Date, format="%Y-%m-%d")
+
+```
+
+Now we combine these 3 files to create a phyloseq object
+
+```{r phyloseq object}
+
+library(phyloseq)
+library(data.table)
+library(ggplot2)
+
+OTU = otu_table(asvfile, taxa_are_rows = TRUE)
+TAX = tax_table(taxfile)
+MAP = sample_data(mapfile)
+
+sswd16S <- merge_phyloseq(OTU, TAX, MAP)
+
+sswd16S_reads <- data.table(as(sample_data(sswd16S), "data.frame"),
+                 TotalReads = sample_sums(sswd16S), keep.rownames = TRUE)
+
+min(sswd16S_reads$TotalReads) #2
+mean(sswd16S_reads$TotalReads) #37726.4
+median(sswd16S_reads$TotalReads) #30697
+max(sswd16S_reads$TotalReads) #995940
+
+sswd16S
+#13321 taxa and 1963 samples
+
+#plot the reads across samplesm with a y-intercept line of 150,000 (potential upper read limit cut-off)
+ggplot(sswd16S_reads, aes(x = rownames(sswd16S_reads), y = TotalReads, color = Host)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_hline(yintercept = 150000, linetype = "solid") +
+  xlab("Samples") +
+  ylab("Counts") +
+  ggtitle("All data runs 1-8: Read counts per sample, line at 150,000 reads")
+
+```
+
+
+Now we need to do some QC on the dataset before doing any visualizations or analyses.
+
+Those ASVs that have an 'unknown' or 'bacteria' only annotation as we cannot confirm if they are truly bacteria or unannotated mitochondria or chloroplasts. Also prudent to remove Proteobacteria only and Alphaproteobacteria only ASV because we cannot confirm or deny if they are mitochondria that just are not annotated.
+
+```{r remove unknown annnotations}
+
+library(dplyr)
+library(microViz)
+
+sswd16S #13321 taxa and 1963 samples
+
+#here we are propagating the last assigned taxonomic level down to species
+sswd_fix<- sswd16S %>%
+ tax_fix(
+  min_length = 4,
+  unknowns = c("", "NA","unknown","uncultured","unassigned","endosymbionts", "endosymbiont_of", "endosymbionts Genus", "Unknown_Family"),
+  sep = " ", anon_unique = TRUE,
+  suffix_rank = "classified")
+
+
+#get rid of uninformative groups
+sswd1<-sswd_fix %>% tax_select(tax_list = "Unassigned Domain", deselect = TRUE) %>% 
+  tax_select(tax_list = "Bacteria Domain", deselect = TRUE) 
+
+sswd1   #12951 taxa and 1963 samples
+
+#we also want to get rid of Proteobacteria Phylum (class) and Alphaproteobacteria Class (family) as these unknown reads could be mitochondrial. I wonder if we should also get rid of Cyanobacteriia Class as it could be unassigned chloroplasts? Think about this.
+
+sswd2<-sswd1 %>% tax_select(tax_list = "Proteobacteria Phylum", deselect = TRUE) %>% tax_select(tax_list = "Alphaproteobacteria Class", deselect = TRUE)
+
+sswd2 #12758 taxa and 1963 samples
+
+```
+
+Next we want to remove the subtidal swabs that ended up in these sequencing runs as we are only interested in the intertidal data for this paper/analyses. As well, there are still a few other sea star species included in the intertidal dataset (e.g. a few few Henricia, Evasterias, Pycno) so we will filter just to the species of interest (Pisaster, Derm + Seawater)
+
+
+```{r excluding subtidal data as well as non focal sea star species}
+
+#removing subtidal data (seawater and sea star samples)
+sswd_intertidal<-ps_filter(sswd2,TidalZone != "subtidal")
+
+sswd_intertidal   #11,372 taxa and 1642 samples once subtidal data removed
+
+#this should have also removed the seawater samples from the subtidal sites, as well as non focal species. to double check:
+unique(get_variable(sswd_intertidal, "TidalZone"))
+
+unique(get_variable(sswd_intertidal, "Site"))
+#annex, shellaligan pass, moulds bay, north beach ri, west beach ri, fifth beach -- only intertidal sites looks good
+
+
+### HOWEVER we still have a number of sea star species that aren't of interest here:
+
+unique(get_variable(sswd_intertidal, "Host"))  #[1] "Pisaster ochraceus - 986      "Dermasterias imbricata - 466 "    "Seawater - 86 "  "Evasterias troschelii - 9"     "Henricia sp.  - 1"            "Apostichopus californicus - 4"
+
+table(sample_data(sswd_intertidal)$Host)
+
+#but we do want to keep the extraction and PCR negatives in for now so let's filter OUT the species not of interest, rather than just include the hosts of interest as this gets rid of all negatives associated with swab samples
+
+sswd_intertidal_focal <- sswd_intertidal %>%
+  ps_filter(!Host %in% c("Evasterias troschelii", "Henricia sp.", "Apostichopus californicus"))
+
+sswd_intertidal_focal #11364 taxa and 1628 samples
+
+#see how many true samples and negatives we have remaining in this dataset:
+table(sample_data(sswd_intertidal_focal)$SampleType2)
+#SeawaterExtNeg SeawaterPCRNeg SeawaterSample     SwabExtNeg     SwabPCRNeg     SwabSample 
+  #          11              1             74             76             13           1453 
+
+table(sample_data(sswd_intertidal_focal)$Host)
+
+#However, it likely makes sense to run decontam on the seawater and swab samples SEPARATELY since the extraction methods were quite different and they have their own associated extraction and PEC negatives. If we run them together, ASVs abundant in seawater but absent in low-biomass swabs may be falsely flagged as contaminants and ASVs abundant in swabs but low in seawater may be ignored as contaminants.
+
+sswd_intertidal_seawater <- ps_filter(sswd_intertidal_focal, SampleType2 %in% c("SeawaterSample", "SeawaterExtNeg", "SeawaterPCRNeg"))
+sswd_intertidal_seawater #3054 taxa and 86 samples 
+
+sswd_intertidal_stars <- ps_filter(sswd_intertidal_focal, SampleType2 %in% c("SwabSample", "SwabExtNeg", "SwabPCRNeg"))
+sswd_intertidal_stars #11270 taxa and 1542 samples 
+```
+
+Now for the decontam package which is used to identify contaminant ASVs based on our negative controls. There are two thresholds (0.1 and 0.5) and here we are using the more stringent 0.5 cut-off largely because most samples were extracted with plate kits which are more subject to cross contamination. Since different extraction methods were used for seawater and swabs and they represent quite different sample types with potentially different microbial communities, we will run decontam separately for each and then merge the decontaminated phyloseq objects
+
+https://benjjneb.github.io/decontam/vignettes/decontam_intro.html
+
+```{r decontam - sea star swabs}
+
+#first running decontam on sea star swabs and then will do seawater separately and merge the two cleaned phyloseqs
+library(ggplot2)
+library(decontam); packageVersion("decontam")
+library(microViz)
+
+packageVersion("decontam")
+
+#using decontam package to control for contaminants identified in negative controls
+
+sample_data(sswd_intertidal_stars)$is.neg <- sample_data(sswd_intertidal_stars)$SampleNeg == "Negative" 
+#negative here includes both extraction and pcr negs from SWAB samples only in this case
+
+#here we are using a more aggressive threshold of 0.5 rather than the default of 0.1
+#this will identify as contaminants all sequences that are more prevalent in negative controls than in positive sample
+
+contamdf.prev05_stars <- isContaminant(sswd_intertidal_stars, method="prevalence", neg="is.neg", threshold=0.5)
+
+table(contamdf.prev05_stars$contaminant)
+#FALSE  TRUE 
+#10525    332    
+
+# Make phyloseq object of presence-absence in negative controls and true sea star samples
+ps.pa_stars <- transform_sample_counts(sswd_intertidal_stars, function(abund) 1*(abund>0))
+ps.pa_stars.neg <- prune_samples(sample_data(ps.pa_stars)$SampleNeg == "Negative", ps.pa_stars)
+ps.pa_stars.pos <- prune_samples(sample_data(ps.pa_stars)$SampleNeg == "Sample", ps.pa_stars)
+
+
+# Make data.frame of prevalence in positive and negative samples using 0.5 threshold
+df.pa0.5_stars <- data.frame(pa.pos=taxa_sums(ps.pa_stars.pos), pa.neg=taxa_sums(ps.pa_stars.neg),
+                    contaminant=contamdf.prev05_stars$contaminant)
+
+ggplot(data=df.pa0.5_stars, aes(x=pa.neg, y=pa.pos, color=contaminant)) + geom_point() +
+  xlab("Prevalence (Negative Controls)") + ylab("Prevalence (True Samples)") + theme_light() + scale_color_brewer(palette = "Dark2") + labs(title="0.5 More Aggresive Threshold")
+
+
+#creating a new decontaminated phyloseq object for the swab samples
+
+decontam_swabs <- prune_taxa(!contamdf.prev05_stars$contaminant, sswd_intertidal_stars)
+
+decontam_swabs #<-<-phyloseq object with contamination removed using the higher threshold PREVALENCE method
+#10925 taxa and 1542 samples
+
+
+```
+
+Now same thing for seawater 
+```{r decontam - seawater}
+
+#first running decontam on sea star swabs and then will do seawater separately and merge the two cleaned phyloseqs
+library(ggplot2)
+library(decontam); packageVersion("decontam")
+library(microViz)
+
+#using decontam package to control for contaminants identified in negative controls
+
+sswd_intertidal_seawater
+sample_data(sswd_intertidal_seawater)$is.neg <- sample_data(sswd_intertidal_seawater)$SampleNeg == "Negative" 
+#negative here includes both extraction and pcr negs from Seawater samples only in this case
+
+#here we are using a more aggressive threshold of 0.5 rather than the default of 0.1
+#this will identify as contaminants all sequences that are more prevalent in negative controls than in positive sample
+
+contamdf.prev05_h20 <- isContaminant(sswd_intertidal_seawater, method="prevalence", neg="is.neg", threshold=0.5)
+table(contamdf.prev05_h20$contaminant)
+#FALSE  TRUE 
+#3026     28
+
+# Make phyloseq object of presence-absence in negative controls and true sea star samples
+ps.pa_h20 <- transform_sample_counts(sswd_intertidal_seawater, function(abund) 1*(abund>0))
+ps.pa_h20.neg <- prune_samples(sample_data(ps.pa_h20)$SampleNeg == "Negative", ps.pa_h20)
+ps.pa_h20.pos <- prune_samples(sample_data(ps.pa_h20)$SampleNeg == "Sample", ps.pa_h20)
+
+
+# Make data.frame of prevalence in positive and negative samples using 0.5 threshold
+df.pa0.5_seawater <- data.frame(pa.pos=taxa_sums(ps.pa_h20.pos), pa.neg=taxa_sums(ps.pa_h20.neg),
+                    contaminant=contamdf.prev05_h20$contaminant)
+
+ggplot(data=df.pa0.5_seawater, aes(x=pa.neg, y=pa.pos, color=contaminant)) + geom_point() +
+  xlab("Prevalence (Negative Controls)") + ylab("Prevalence (True Samples)") + theme_light() + scale_color_brewer(palette = "Dark2") + labs(title="0.5 More Aggresive Threshold")
+
+
+#creating a new decontaminated phyloseq object for the seawater h20 samples
+
+decontam_seawater <- prune_taxa(!contamdf.prev05_h20$contaminant, sswd_intertidal_seawater)
+
+decontam_seawater #<-<-phyloseq object with contamination removed using the higher threshold PREVALENCE method
+#3026 taxa and 86 samples
+
+```
+
+now we want to merge these phyloseq objects back together
+
+```{r merge swab and seawater decontam}
+
+decontam_merged <- merge_phyloseq(decontam_seawater, decontam_swabs)
+decontam_merged
+table(sample_data(decontam_merged)$Host)
+
+```
+
+Now do a final filtering of low read-count samples (i.e. similar to negs), and remove any remaining negative controls
+
+```{r}
+
+decontam_filter <- prune_samples(sample_sums(decontam_merged) >= 7000, decontam_merged)
+decontam_filter
+
+decontam_filter_nonegs <- ps_filter(decontam_filter, SampleNeg != "Negative")
+decontam_filter_nonegs
+
+#saving this phyloseq object
+saveRDS(decontam_filter_nonegs, file = "C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs.rds")
+
+```
+
+For some analyses, e.g. beta diversity, indval, we will want to also filter the data to remove rare ASVs. I will save this as a second RDS file
+
+```{r}
+
+#for beta diversity we want to filter out ASVs present in less than 5% of samples
+
+# Number of samples
+nsamples_total <- nsamples(decontam_filter_nonegs)
+
+# Calculate prevalence (number of samples where ASV > 0)
+prev_counts <- apply(otu_table(decontam_filter_nonegs), 1, function(x) sum(x > 0))
+
+# Convert to proportion
+prev_prop <- prev_counts / nsamples_total
+
+#Setting prevelance level
+decontam_filter_nonegs_prev <- prune_taxa(prev_prop >= 0.01, decontam_filter_nonegs)
+
+reads_post_prev <- data.table(as(sample_data(decontam_filter_nonegs_prev), "data.frame"),
+                 TotalReads = sample_sums(decontam_filter_nonegs_prev), keep.rownames = TRUE)
+
+#saving this phyloseq object
+
+saveRDS(decontam_filter_nonegs_prev, file = "C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs_prev.rds")
+
+```
+
+
