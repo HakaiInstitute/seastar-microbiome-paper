@@ -1,0 +1,274 @@
+---
+title: "field_density_prevalence"
+output: html_document
+date: "2026-03-24"
+---
+
+```{r}
+
+#Load in the field data
+setwd("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data")
+
+field_data <-read.csv("field_data_all.csv", header = TRUE) 
+
+
+```
+
+
+Load necessary packages
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(ggtext)
+library(ggpubr)
+library(tidyr)
+
+```
+
+
+```{r}
+
+# Seastar Density 
+dens_data <- field_data %>%
+  subset(scientific_name == 'Pisaster ochraceus'
+         | scientific_name == 'Dermasterias imbricata') %>%
+  group_by(region, date, site, unit_area_2D, unit_area_3D, scientific_name) %>%
+  summarise(total_count = sum(count)) %>%
+  ungroup()
+
+# Calculate density
+dens_data$density_2D <- dens_data$total_count/dens_data$unit_area_2D
+dens_data$density_3D <- dens_data$total_count/dens_data$unit_area_3D
+
+# Create a filter for swabbing date ranges
+site_ranges <- tibble(
+  site = c("Fifth Beach", "North Beach", "West Beach", "Annex",
+           "Shellaligan Pass", "Valdez"),
+  start_date = as.Date(c("2020-02-10", "2020-02-09", "2020-02-11",
+                         "2021-05-26", "2021-05-27", "2021-05-28")),
+  end_date   = as.Date(c("2022-11-27", "2022-11-28", "2022-11-25",
+                         "2023-11-28", "2023-11-27", "2023-11-26")))
+
+site_ranges$region <- ifelse(site_ranges$site == 'Fifth Beach'
+                             | site_ranges$site == 'North Beach'
+                             | site_ranges$site == 'West Beach', 'Calvert',
+                             'Quadra')
+
+```
+
+
+```{r}
+
+dens_data <- dens_data %>%
+  left_join(site_ranges, by = c("site", 'region'))
+
+dens_data <- dens_data %>%
+  arrange(region, site, scientific_name, date)
+
+dens_data <- dens_data %>%
+  mutate(scientific_name = recode(scientific_name,
+    "Dermasterias imbricata" = "D. imbricata",
+    "Pisaster ochraceus" = "P. ochraceus"
+  ))
+
+dens_data$date<-as.Date(dens_data$date)
+
+# Density plot - Calvert
+dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
+             aes(x = date, y = density_2D, colour = scientific_name)) +
+  geom_rect(data = subset(site_ranges, region == 'Calvert'),
+            aes(xmin = start_date, xmax = end_date),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "lightblue",
+            alpha = 0.3,
+            inherit.aes = FALSE) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 0.5) +
+  labs(title = "Calvert Island",
+       x = 'Year',
+       y = bquote(Density~(ind/m^2)),
+       colour = 'Species') +
+  scale_colour_manual(values = c(
+    "P. ochraceus" = "#925E9FFF",
+    "D. imbricata" = "#AD002AFF")) +
+  scale_y_continuous(limits = c(0, 4.2),
+                     breaks = seq(0, 4, 1),
+                     expand = c(0,0)) +
+  scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+  theme_classic() + facet_wrap(~site, ncol=1) +
+  theme(plot.title = ggtext::element_markdown(hjust = 0.5),
+        panel.grid.major.y = element_line(linetype = 'dotted'),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_markdown(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        strip.text = element_markdown(colour = "black"),
+        legend.text = element_text(face = "italic")) +
+   theme(
+  strip.background = element_blank()
+)
+
+dens_calvert
+
+```
+
+```{r}
+# Density plot - Quadra
+dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
+             aes(x = date, y = density_2D, colour = scientific_name)) +
+  geom_rect(data = subset(site_ranges, region == 'Quadra'),
+            aes(xmin = start_date, xmax = end_date),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "lightblue",
+            alpha = 0.3,
+            inherit.aes = FALSE) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 0.5) +
+  labs(title = "Quadra Island",
+       x = 'Year',
+       y = bquote(Density~(ind/m^2)),
+       colour = 'Species') +
+  scale_colour_manual(values = c(
+    "P. ochraceus" = "#925E9FFF",
+    "D. imbricata" = "#AD002AFF")) +
+  scale_y_continuous(limits = c(0, 4.2),
+                     breaks = seq(0, 4, 1),
+                     expand = c(0,0)) +
+  scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+  theme_classic() + facet_wrap(~site, ncol=1) +
+ theme(plot.title = ggtext::element_markdown(hjust = 0.5),
+        panel.grid.major.y = element_line(linetype = 'dotted'),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_markdown(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        strip.text = element_markdown(colour = "black"),
+        legend.text = element_text(face = "italic")) + 
+  theme(
+  strip.background = element_blank()
+)
+
+  
+dens_quadra  
+
+#combine both density plots
+dens_combined<-ggarrange(dens_calvert, dens_quadra,
+          labels = c("a", "b"),
+          ncol = 2, nrow = 1,
+          common.legend = TRUE, legend="bottom")
+
+dens_combined
+
+ggsave("dens_combined.pdf", dpi=300, width=10, height=8, units="in")
+
+
+```
+
+Now looking at SSWD prevalence on Quadra and Calvert
+
+```{r}
+
+# Seastar Infection Prevalence
+prev_data <- field_data %>% 
+  dplyr::filter(scientific_name == "Pisaster ochraceus") %>%
+  group_by(region, date, site, month, year, disease_status) %>% 
+  summarise(total.count = sum(count)) %>% 
+  pivot_wider(values_from = total.count, names_from = disease_status) %>% 
+  mutate(unin = sum(`0`), inf = sum(`1`,`2`,`3`,`4`, na.rm = T), 
+         prev.prop = ifelse(inf == 0, 0, ifelse(is.na(inf) == T, 0, 
+                                                ifelse(is.na(unin) == T,0,  
+                                                       inf/(unin+inf)))), 
+         prev = prev.prop*100, total.count = unin+inf) %>% 
+  ungroup()
+
+# Create a filter for swabbing date ranges
+site_ranges <- tibble(
+  region = c("Calvert", "Quadra"),
+  start_date = as.Date(c("2020-02-09", "2021-05-26")),
+  end_date   = as.Date(c("2022-11-28", "2023-11-28")))
+
+prev_data <- prev_data %>% left_join(site_ranges, by = "region")
+
+#custom color palette
+
+library(colorspace)
+
+# Prevalence Plot
+prev_plot_quadra<-ggplot(subset(prev_data, region == 'Quadra'),
+             aes(x = date, y = prev, colour = site)) +
+  geom_rect(data = subset(site_ranges, region == 'Quadra'),
+            aes(xmin = start_date, xmax = end_date),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "lightblue",
+            alpha = 0.3,
+            inherit.aes = FALSE) +
+  geom_point(size = I(2)) +
+  geom_line(size = 0.5) +
+  labs(title = "Quadra Island", 
+       x = 'Year',
+       y = 'Wasting Prevalence',
+       colour = 'Site') +
+  ylim(0,(max(prev_data$prev)+0.01)) + 
+  theme_classic() +
+  theme(plot.title = ggtext::element_markdown(hjust = 0.5),
+        panel.grid.major.y = element_line(linetype = 'dotted'),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        #axis.text.y = element_blank(),
+        #axis.title.y = element_blank(),
+        axis.text = element_markdown(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        strip.text = element_markdown(colour = "black")) + 
+  theme(strip.background = element_blank()) +
+  scale_colour_discrete_qualitative(palette = "Cold")
+
+prev_plot_quadra
+
+
+### now Calvert
+prev_plot_calvert<-ggplot(subset(prev_data, region == 'Calvert'),
+             aes(x = date, y = prev, colour = site)) +
+  geom_rect(data = subset(site_ranges, region == 'Calvert'),
+            aes(xmin = start_date, xmax = end_date),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "lightblue",
+            alpha = 0.3,
+            inherit.aes = FALSE) +
+  geom_point(size = I(2)) +
+  geom_line(size = 0.5) +
+  labs(title = "Calvert Island", 
+       x = 'Year',
+       y = 'Wasting Prevalence',
+       colour = 'Site') +
+  ylim(0,(max(prev_data$prev)+0.01)) + 
+  theme_classic() +
+   theme(plot.title = ggtext::element_markdown(hjust = 0.5),
+        panel.grid.major.y = element_line(linetype = 'dotted'),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        #axis.text.y = element_blank(),
+        #axis.title.y = element_blank(),
+        axis.text = element_markdown(colour = "black"),
+        axis.ticks = element_line(colour = "black"),
+        strip.text = element_markdown(colour = "black")) + 
+  theme(strip.background = element_blank()) +
+  scale_colour_discrete_qualitative(palette = "Warm")
+
+prev_plot_calvert
+
+prev_combined<-ggarrange(prev_plot_calvert, prev_plot_quadra,
+          labels = c("a", "b"),
+          ncol = 1, nrow = 2,
+          common.legend = FALSE, legend="right")
+
+prev_combined
+
+ggsave("prev_combined.pdf", dpi=300, width=10, height=8, units="in")
+
+```
+
+
+

@@ -1,0 +1,570 @@
+---
+title: "smic_beta_diversity"
+output: html_document
+date: "2026-03-12"
+---
+
+########## BETA DIVERSITY ##############
+
+First read in the phyloseq object that we need
+
+```{r }
+
+#read in the required QC'ed phyloseq object
+decontam_filter_nonegs_prev <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs_prev.rds")
+
+```
+
+```{r load required packages}
+
+library(phyloseq)
+library(ggplot2)
+library(vegan)
+library(ggpubr)
+library(RColorBrewer)
+
+```
+
+
+Beta diversity among host and regions
+
+```{r Ordinations}
+
+decontam_filter_nonegs_prev
+
+#for the host comparison we just want healthy pisaster along with derm and seawater
+healthy_all_b <- ps_filter(
+  decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus" & DermisType2 == "H_healthy") |
+  (Host == "Dermasterias imbricata" & DermisType2 == "H_healthy") |
+  (Host == "Seawater"))
+
+#first we need to normalize the data, regardless of ordination method
+
+healthy_all_b_trans <- healthy_all_b %>%
+  transform_sample_counts(function(x) {x/sum(x)})
+
+
+#going with bray and NMDS
+healthy_host_nmds <- ordinate(healthy_all_b_trans, method = "NMDS", distance = "bray")
+
+nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samples",
+  color = "Host", shape="SiteType") +
+  theme_classic() +
+   scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF")) + 
+  scale_shape_manual(values = c(8, 15)) +
+  theme(legend.position="right") +
+  theme(strip.background = element_blank())
+
+nmds_host
+
+alpha_host_boxplot
+
+fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, common.legend = TRUE)
+fig2
+
+ggsave("fig2.pdf", dpi=300, width=10, height=8, units="in")
+```
+
+
+```{r permanova to look at species * region}
+
+#using adonis to run a PERMANOVA by kit and species
+
+# Calculate bray curtis distance matrix
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_host <- phyloseq::distance(healthy_all_b_trans, method = "bray")
+
+# make a data frame from the sample_data
+host_df <- data.frame(sample_data(healthy_all_b_trans))
+
+# Permanova by Host
+adonis2(dist_mat_host~ Host, data = host_df)
+
+#beta dispersion test
+beta_host <- betadisper(dist_mat_host, host_df$Host)
+permutest(beta_host)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannot technically use a PERMANOVA and instead need to use ANOSIM
+
+anova(beta_host)
+plot(beta_host)
+
+#PERMANOVA assumes homogeneity of multivariate dispersion.
+
+
+```
+
+
+```{r ANOSIM instead of PERMANOVA}
+
+#since data violate assumptions for PERMANOVA, we will run anosim as a non-parametric alternative
+
+# 4. Run ANOSIM
+# formula: anosim(distance_matrix, grouping_factor)
+ano_host <- anosim(dist_mat_host, host_df$Host, permutations = 999)
+
+# 5. View results
+summary(ano_host)
+plot(ano_host)
+
+```
+ 
+ 
+```{r Testing for effect of region within seawater}
+
+seawater_norm <- ps_filter(healthy_all_b_trans,
+  (Host == "Seawater"))
+
+seawater.nmds <- ordinate(seawater_norm, method = "NMDS", distance = "bray")
+
+# Plot of seawater communities between regions
+seawater_region_ord<-plot_ordination(
+  physeq = seawater_norm,
+  ordination = seawater.nmds,
+  color = "SiteType") +
+  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  theme_classic() +
+   ggtitle("Seawater")
+
+seawater_region_ord
+
+#using adonis to run a PERMANOVA by region within seawater
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_seawater <- phyloseq::distance(seawater_norm, method = "bray")
+
+# make a data frame from the sample_data
+seawater_df <- data.frame(sample_data(seawater_norm))
+
+# Permanova by Host
+adonis2(dist_mat_seawater~ SiteType, data = seawater_df)
+
+#beta dispersion test
+beta_seawater <- betadisper(dist_mat_seawater, seawater_df$SiteType)
+permutest(beta_seawater)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+
+anova(beta_seawater)
+plot(beta_seawater)
+```
+
+ 
+```{r Testing for effect of region within Derm}
+
+derm_norm <- ps_filter(healthy_all_b_trans,
+  (Host == "Dermasterias imbricata"))
+
+derm.nmds <- ordinate(derm_norm, method = "NMDS", distance = "bray")
+
+# Plot of seawater communities between regions
+derm_region_ord<-plot_ordination(
+  physeq = derm_norm,
+  ordination = derm.nmds,
+  color = "SiteType") +
+  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  theme_classic() +
+   ggtitle("D. imbricata")
+
+derm_region_ord
+
+#using adonis to run a PERMANOVA by region within seawater
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_derm <- phyloseq::distance(derm_norm, method = "bray")
+
+# make a data frame from the sample_data
+derm_df <- data.frame(sample_data(derm_norm))
+
+# Permanova by Host
+adonis2(dist_mat_derm~ SiteType, data = derm_df)
+
+#beta dispersion test
+beta_derm <- betadisper(dist_mat_derm, derm_df$SiteType)
+permutest(beta_derm) # P > 0.05
+
+anova(beta_derm)
+plot(beta_derm)
+
+```
+
+
+```{r Testing for effect of region within Pisaster}
+
+pis_norm <- ps_filter(healthy_all_b_trans,
+  (Host == "Pisaster ochraceus"))
+
+pis.nmds <- ordinate(pis_norm, method = "NMDS", distance = "bray")
+
+# Plot of seawater communities between regions
+pis_region_ord<-plot_ordination(
+  physeq = pis_norm,
+  ordination = pis.nmds,
+  color = "SiteType") +
+  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  theme_classic() +
+   ggtitle("P. ochraceus")
+
+pis_region_ord
+
+#using adonis to run a PERMANOVA by region within seawater
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_pis <- phyloseq::distance(pis_norm, method = "bray")
+
+# make a data frame from the sample_data
+pis_df <- data.frame(sample_data(pis_norm))
+
+# Permanova by Host
+adonis2(dist_mat_pis~ SiteType, data = pis_df)
+
+#beta dispersion test
+beta_pis <- betadisper(dist_mat_pis, pis_df$SiteType)
+permutest(beta_pis ) # P = 0.001
+
+anova(beta_pis )
+plot(beta_pis )
+
+#Pisaster data don't meet PERMANOVA assmumption so running ANOSIM instead
+ano_pis <- anosim(dist_mat_pis, pis_df$SiteType, permutations = 999)
+
+# 5. View results
+summary(ano_pis)
+plot(ano_pis)
+
+```
+
+############ SEASONAL TRENDS IN BETA DIVERSITY #############
+ 
+ 
+```{r Seasonal trends in beta diversity in seawater}
+
+# Plot of seawater communities across seasons 
+seawater_season_ord<-plot_ordination(
+  physeq = seawater_norm,
+  ordination = seawater.nmds,
+  color = "Season") +
+  #scale_color_manual(values = c("coral2", "lightseagreen", "darkgoldenrod2", "darkslateblue")) 
+  scale_color_brewer(palette="Set1") +
+ facet_grid(SiteType~Year) +
+  theme_classic() +
+   ggtitle("Seawater")
+
+seawater_season_ord
+
+#using adonis to run a PERMANOVA by season within seawater
+
+adonis2(dist_mat_seawater~Season, data = seawater_df)
+
+#beta dispersion test
+beta_seawater_season <- betadisper(dist_mat_seawater, seawater_df$Season)
+permutest(beta_seawater_season)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+
+anova(beta_seawater_season )
+plot(beta_seawater_season )
+
+
+#using adonis to run a PERMANOVA by region within seawater
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_seawater <- phyloseq::distance(seawater_norm, method = "bray")
+
+# make a data frame from the sample_data
+seawater_df <- data.frame(sample_data(seawater_norm))
+
+# Permanova by Host
+adonis2(dist_mat_seawater~ SiteType, data = seawater_df)
+
+#beta dispersion test
+beta_seawater <- betadisper(dist_mat_seawater, seawater_df$SiteType)
+permutest(beta_seawater)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+
+anova(beta_seawater)
+plot(beta_seawater)
+
+#don't meet permanova assumptions so using anosim
+
+ano_seawater_season <- anosim(dist_mat_seawater, seawater_df$Season, permutations = 999)
+
+# 5. View results
+summary(ano_seawater_season)
+plot(ano_seawater_season)
+
+```
+
+
+```{r Derm beta diversity season}
+
+# Plot of healthy Derm across seasons
+derm_season_ord<-plot_ordination(
+  physeq = derm_norm,
+  ordination = derm.nmds,
+  color = "Season") +
+  scale_color_brewer(palette="Set1") +
+  facet_grid(SiteType~Year) +
+  theme_classic() +
+   ggtitle("Dermasterias imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+derm_season_ord
+
+#using adonis to run a PERMANOVA by season within Derm
+
+# Permanova by Host
+adonis2(dist_mat_derm~Season, data = derm_df)
+
+#beta dispersion test
+beta_derm_season<-betadisper(dist_mat_derm, derm_df$Season)
+permutest(beta_derm_season)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+
+anova(beta_derm_season)
+plot(beta_derm_season)
+
+
+#don't meet permanova assumptions so using anosim
+
+ano_derm_season <- anosim(dist_mat_derm, derm_df$Season, permutations = 999)
+
+# 5. View results
+summary(ano_derm_season)
+plot(ano_derm_season)
+
+```
+
+
+```{r}
+#FINALLY - PISASTER
+
+# Plot of healthy Pisaster across seasons
+pis_season_ord<-plot_ordination(
+  physeq = pis_norm,
+  ordination = pis.nmds,
+  color = "Season") +
+  scale_color_brewer(palette="Set1") + 
+ # facet_grid(SiteType~Year) +
+  facet_grid(SiteType~Year) +
+  theme_classic() +
+  ggtitle("Pisaster ochraceus") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+pis_season_ord
+
+
+#using adonis to run a PERMANOVA by season within Pisaster
+
+# Permanova by Host
+adonis2(dist_mat_pis ~ Season, data = pis_df)
+
+#beta dispersion test
+beta_pis_season <- betadisper(dist_mat_pis, pis_df$Season)
+permutest(beta_pis_season)
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+
+anova(beta_pis_season)
+plot(beta_pis_season)
+
+
+#don't meet permanova assumptions so using anosim
+
+ano_pis_season <- anosim(dist_mat_pis, pis_df$Season, permutations = 999)
+
+# 5. View results
+summary(ano_pis_season)
+plot(ano_pis_season)
+
+#combine all three hosts nmds season plots
+ggarrange(seawater_season_ord, derm_season_ord, pis_season_ord, common.legend=TRUE, ncol=1, align = "v", legend = "right")
+
+```
+
+############ WASTING DISEASE TRENDS IN BETA DIVERSITY #############
+
+
+```{r Pisaster wasting scores beta diversity}
+
+#want all Pisaster in this case, not just healthy
+
+pisaster_all <- ps_filter(decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus"))
+  
+pisaster_all_norm <- pisaster_all %>%
+  transform_sample_counts(function(x) {x/sum(x)})
+
+table(sample_data(pisaster_all_norm)$WastingCategory)
+table(sample_data(pisaster_all_norm)$DermisType2)
+table(sample_data(pisaster_all_norm)$Disease_Status_Star)
+
+
+#going with bray and NMDS
+diseased_pisaster_nmds <- ordinate(pisaster_all_norm, method = "NMDS", distance = "bray")
+
+
+# Plot of Pisaster based on healthy vs diseased stars
+nmds_pisaster_diseasestat <-plot_ordination(
+physeq = pisaster_all_norm,
+  ordination = diseased_pisaster_nmds,
+  color = "Disease_Status_Star") +
+ scale_color_manual(values = c("turquoise2", "maroon")) + 
+  #facet_grid(Month~Site) +
+  theme_classic()
+
+nmds_pisaster_diseasestat
+
+#plotting Pisaster across wasting categories
+
+nmds_pisaster_wastingcat <-plot_ordination(
+  physeq = pisaster_all_norm,
+  ordination = diseased_pisaster_nmds,
+  color = "WastingCategory") +
+ theme_classic() +
+  scale_color_manual(values = c("lightgreen","mediumorchid", "mediumorchid4")) +
+  facet_grid(Month~Site, axes = "all_x")
+
+nmds_pisaster_wastingcat
+
+
+# Plot of Pisaster based on swab type 
+#H_healthy
+#H_diseased
+#L_diseased
+nmds_pisaster_swabtype <-plot_ordination(
+  physeq = pisaster_all_norm,
+  ordination = diseased_pisaster_nmds,
+  color = "DermisType2") +
+ scale_color_manual(values = c("#26547c", "lightgreen", "#ef476f")) + 
+  facet_wrap(~SiteType) +
+   theme_classic() +
+  theme(
+    strip.background = element_blank() # Removes grey fil   # Removes border
+  )
+nmds_pisaster_swabtype
+
+
+
+ggarrange(richness_wasting_plot, nmds_pisaster_all, align = "v", legend = "right", labels = "A", "B", ncol=1)
+
+
+
+#trying another ordination with just H_diseased and L_diseased
+
+#going with bray and NMDS
+diseased_only_nmds<- ordinate(pisaster_disease_norm, method = "NMDS", distance = "bray")
+
+
+nmds_pisaster_diseaseonly <-plot_ordination(
+  physeq = pisaster_disease_norm,
+  ordination = diseased_only_nmds,
+  color = "DermisType2") +
+ scale_color_manual(values = c("#26547c", "lightgreen", "#ef476f")) + 
+   theme_classic2() +
+  theme(
+    strip.background = element_blank() # Removes grey fil   # Removes border
+  )
+nmds_pisaster_diseaseonly
+
+
+```
+
+Now some stats for all three categories examined above
+
+```{r}
+#using adonis to run a PERMANOVA by wasting cat
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_wasting <- phyloseq::distance(pisaster_all_norm, method = "bray")
+
+# make a data frame from the sample_data
+pis_df_wasting <- data.frame(sample_data(pisaster_all_norm))
+
+
+# Permanova by sea star DISEASE STATUS
+adonis2(dist_mat_wasting~ Disease_Status_Star, data = pis_df_wasting, permutations = 999)
+
+#beta dispersion test
+beta_disease_status <- betadisper(dist_mat_wasting, pis_df_wasting$Disease_Status_Star)
+permutest(beta_disease_status) # P = 0.047
+
+anova(beta_disease_status) #p = 0.05874 - right on the cusp
+plot(beta_disease_status)
+boxplot(beta_disease_status)
+
+#Pisaster wasting data don't meet PERMANOVA assmumption so running ANOSIM instead
+anosim_disease_status <- anosim(dist_mat_wasting, pis_df_wasting$Disease_Status_Star, permutations = 999)
+
+# 5. View results
+summary(anosim_disease_status)
+plot(anosim_disease_status)
+
+#ANOSIM statistic R: 0.005812    Significance: 0.274
+
+
+
+# Permanova by wasting category
+adonis2(dist_mat_wasting~ WastingCategory, data = pis_df_wasting)
+
+#beta dispersion test
+beta_wastingcat <- betadisper(dist_mat_wasting, pis_df_wasting$WastingCategory)
+permutest(beta_wastingcat) # P = 0.014
+
+anova(beta_wastingcat)  #0.014
+plot(beta_wastingcat)
+
+#Pisaster wasting cat data don't meet PERMANOVA assmumption so running ANOSIM instead
+anosim_wastingcat <- anosim(dist_mat_wasting, pis_df_wasting$WastingCategory, permutations = 999)
+
+# 5. View results
+summary(anosim_wastingcat)   #ANOSIM statistic R: 0.01506 , Significance: 0.179 
+plot(anosim_wastingcat)
+
+
+####### and by SWAB TYPE
+
+
+#here we want to just compare H_diseased and L_diseased so ignore H_healthy
+pisaster_diseased <- ps_filter(decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus" & DermisType2 != "H_healthy"))
+  
+pisaster_diseased
+pisaster_disease_norm <- pisaster_diseased %>%
+  transform_sample_counts(function(x) {x/sum(x)})
+
+dist_mat_disease <- phyloseq::distance(pisaster_disease_norm, method = "bray")
+
+# make a data frame from the sample_data
+pis_df_disease <- data.frame(sample_data(pisaster_disease_norm))
+
+set.seed(1)
+
+# Permanova by wasting category
+adonis2(dist_mat_disease~ DermisType2, data = pis_df_disease, permutations = 999)
+
+#beta dispersion test
+beta_disease <- betadisper(dist_mat_disease, pis_df_disease$DermisType2)
+permutest(beta_disease) # P = 0.665
+#does meet the homogeneity of dispersions assumption in this case
+
+anova(beta_disease)
+plot(beta_disease)
+
+anosim_disease <- anosim(dist_mat_disease, pis_df_disease$DermisType2, permutations = 999)
+
+# 5. View results
+summary(anosim_disease)
+plot(anosim_disease)
+
+
+```
+
+

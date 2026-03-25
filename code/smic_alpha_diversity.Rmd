@@ -1,0 +1,501 @@
+---
+title: "smic_alpha_diversity"
+output: html_document
+date: "2026-03-12"
+---
+
+First read in the phyloseq object that we need
+
+```{r }
+
+#read in the required QC'ed phyloseq object
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs.rds")
+
+```
+
+
+```{r load required libraries}
+
+library(phyloseq)
+library(ggplot2)
+library(microViz)
+library(dplyr)
+library(data.table)
+library(tidyr)
+library(RColorBrewer)
+
+```
+
+############### HOST ALPHA DIVERSITY ##################
+
+```{r alpha diversity by host}
+
+#we only want to look at healthy Pisaster along with Derm and seawater for these initial plots -- disease categories examined further down
+
+#we will use inverse simpson index as it's the most robust to non-rarefied data
+
+healthy_all <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Pisaster ochraceus" & DermisType2 == "H_healthy") |
+  (Host == "Dermasterias imbricata" & DermisType2 == "H_healthy") |
+  (Host == "Seawater"))
+
+richness_host <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(healthy_all, measures = "InvSimpson"),
+  "Host" = phyloseq::sample_data(healthy_all)$Host, 
+  "Region" = phyloseq::sample_data(healthy_all)$SiteType, 
+  "Site" = phyloseq::sample_data(healthy_all)$Site)
+
+richness_host$Host<-factor(richness_host$Host)
+richness_host$Region<-factor(richness_host$Region)
+richness_host$Site<-factor(richness_host$Region)
+
+#boxplot
+alpha_host_boxplot<-richness_host %>%
+  pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = Host, y = value, color = Host)) +
+  geom_boxplot(outlier.colour = NA) +
+ geom_jitter(alpha=0.3, height = 0, width = .2)+
+ #geom_jitter(aes(shape = Region), height = 0, width = .4) +
+  labs(x = NULL, y = "Diversity (Inv. Simpson)") +
+  facet_wrap(~Region, scales = "free") +
+  scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Host Type") +
+  scale_shape_manual(values = c(8, 15)) +
+  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
+  theme_classic() +
+  theme(legend.position="right") + guides(color = "none") +
+   theme(axis.text.x = element_blank()) +
+  theme(strip.background = element_blank())
+
+  
+ alpha_host_boxplot     #boxplot version
+
+```
+
+#Mixed effects models to test relative effects of host and region on alpha diversity (inv simpson index)
+
+```{r}
+
+library(lme4)
+library(MuMIn)
+library(DHARMa)
+
+#run 4 models to compare:
+
+mod1_host<-glmer(InvSimpson~Host + (1 | Region / Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod2_region<-glmer(InvSimpson~Region + (1 | Region / Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod3_regionhost <- glmer(InvSimpson~Host*Region + (1 | Region / Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod4_null<- glmer(InvSimpson~ 1 + (1 | Region / Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+
+
+#comparing all 4 models
+model.sel(mod1_host, mod2_region, mod3_regionhost, mod4_null, rank = "AICc", beta = "sd")
+
+#calculate R2 (marginal and conditional for each model)
+r.squaredGLMM(mod1_host)
+r.squaredGLMM(mod2_region)
+r.squaredGLMM(mod3_regionhost)
+r.squaredGLMM(mod4_null)
+
+# Example model fit
+
+# Simulate residuals
+simulated_residuals <- simulateResiduals(mod1_host)
+
+# Plot the diagnostics
+plot(simulated_residuals)
+plotResiduals(simulated_residuals)
+```
+
+########### SEASONAL ALPHA DIVERSITY   ######################
+
+```{r alpha diversity by SEASON, seawater}
+
+seawater  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Seawater"))
+
+seawater
+ntaxa(seawater)
+nsamples(seawater)
+sample_data(seawater)
+
+### SEAWATER RICHNESS ###
+richness_seawater <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(seawater, measures = "InvSimpson"),
+  "Season" = phyloseq::sample_data(seawater)$Season, 
+  "Region" = phyloseq::sample_data(seawater)$SiteType,
+  "Year" = phyloseq::sample_data(seawater)$Year, 
+  "DayOfYear" = phyloseq::sample_data(seawater)$DayOfYear, 
+  "Month" = phyloseq::sample_data(seawater)$Month, 
+  "Site" = phyloseq::sample_data(seawater)$Site)
+
+richness_seawater$Year<-factor(richness_seawater$Year)
+richness_seawater$Season <- factor(
+  richness_seawater$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+
+
+#Inverse simpson seawater by region and year
+
+seawater_seasonal<-richness_seawater %>%
+    pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = Season, y = value, color = Season)) +
+  geom_boxplot(outlier.color = NA) +
+ geom_jitter(alpha=0.3, height = 0, width = .2) +
+  labs(x = NULL, y = "Inv. Simpson") +
+  #scale_color_manual(values = c("darkslateblue", "springgreen3", "darkgoldenrod2", "darkorange"), name = "Season") +
+  scale_color_brewer(palette="Set1") +
+  scale_shape_manual(values = c(8, 15)) +
+  theme_classic() + 
+  theme(axis.text.x = element_blank()) +
+  facet_grid(Region~Year) +
+  scale_y_continuous(limits = c(0, 200)) +
+  guides(color = "none") +
+  ggtitle("Seawater") + theme(plot.title = element_text(size = 10))
+
+
+seawater_seasonal
+
+```
+
+
+```{r mixed effect model richness seawater}
+
+richness_seawater
+
+mod1_season<-glmer(InvSimpson~Season + (1 | Region), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod2_year<-glmer(InvSimpson~Year + (1 | Region ), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod3_seasonyear <- glmer(InvSimpson~Season*Year + (1 | Region ), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod4_nullseason<- glmer(InvSimpson~ 1 + (1 | Region ), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+
+
+#comparing all 4 models
+model.sel(mod1_season, mod2_year, mod3_seasonyear, mod4_nullseason, rank = "AIC", beta = "sd")
+
+#calculate R2 (marginal and conditional for each model)
+r.squaredGLMM(mod1_season)
+r.squaredGLMM(mod2_year)
+r.squaredGLMM(mod3_seasonyear)
+r.squaredGLMM(mod4_nullseason)
+
+# Example model fit (assuming your data is ready)
+# model <- glmer(response ~ fixed_effects + (1|random_effect_group), family = binomial, data = mydata)
+
+# Simulate residuals
+simulated_residuals_seawater <- simulateResiduals(mod1_season)
+
+# Plot the diagnostics
+plot(simulated_residuals_seawater)
+plotResiduals(simulated_residuals_seawater)
+
+```
+
+
+```{r alpha diversity by SEASON, Derm}
+
+healthy_derm  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Dermasterias imbricata" & DermisType2 == "H_healthy"))
+
+### DERM ###
+richness_derm <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(healthy_derm, measures = "InvSimpson"),
+  "Season" = phyloseq::sample_data(healthy_derm)$Season, 
+  "Region" = phyloseq::sample_data(healthy_derm)$SiteType,
+  "Year" = phyloseq::sample_data(healthy_derm)$Year, 
+  "DayOfYear" = phyloseq::sample_data(healthy_derm)$DayOfYear, 
+  "Month" = phyloseq::sample_data(healthy_derm)$Month, 
+  "Site" = phyloseq::sample_data(healthy_derm)$Site)
+
+richness_derm$Site<-factor(richness_derm$Site)
+richness_derm$Season <- factor(
+  richness_derm$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+#Inverse simpson seawater by region and year
+derm_seasonal<- richness_derm %>%
+    pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = Season, y = value, color = Season)) +
+  geom_boxplot() +
+ geom_jitter(height = 0, width = .2, alpha = 0.3) +
+  labs(x = NULL, y = "Inv. Simpson") +
+  #facet_grid(Region~Year, scales = "free") +
+  #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
+  scale_color_brewer(palette="Set1") +
+  scale_shape_manual(values = c(8, 15)) +
+  theme_classic() +
+  theme(legend.position="right") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  facet_grid(Region~Year) + theme(axis.text.x = element_blank()) +
+  scale_y_continuous(limits = c(0, 200)) +
+  guides(color = "none") +
+  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+  
+derm_seasonal
+
+```
+
+
+```{r mixed effects model derm season}
+richness_derm
+
+mod1_season_derm<-glmer(InvSimpson~Season + (1 | Region ), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod2_year_derm<-glmer(InvSimpson~Year + (1 | Region), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod3_seasonyear_derm<- glmer(InvSimpson~Season*Year + (1 | Region ), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod4_nullseason_derm<- glmer(InvSimpson~ 1 + (1 | Region ), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+
+
+#boundary (singular) fit: see help('isSingular') warning for all
+
+#comparing all 4 models
+model.sel(mod1_season_derm, mod2_year_derm, mod3_seasonyear_derm, mod4_nullseason_derm, rank = "AIC", beta = "sd")
+
+#calculate R2 (marginal and conditional for each model)
+r.squaredGLMM(mod1_season_derm)
+r.squaredGLMM(mod2_year_derm)
+r.squaredGLMM(mod3_seasonyear_derm)
+r.squaredGLMM(mod4_nullseason_derm)
+
+# Example model fit (assuming your data is ready)
+# model <- glmer(response ~ fixed_effects + (1|random_effect_group), family = binomial, data = mydata)
+
+# Simulate residuals
+simulated_residuals_derm <- simulateResiduals(mod1_season_derm)
+
+# Plot the diagnostics
+plot(simulated_residuals_derm)
+plotResiduals(simulated_residuals)
+
+```
+
+
+```{r alpha diversity by SEASON, Pisaster}
+
+healthy_pisaster  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Pisaster ochraceus" & Disease_Status_Star == "healthy"))
+
+### PISASTER ###
+richness_pis <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(healthy_pisaster, measures = "InvSimpson"),
+  "Season" = phyloseq::sample_data(healthy_pisaster)$Season, 
+  "Region" = phyloseq::sample_data(healthy_pisaster)$SiteType,
+  "Year" = phyloseq::sample_data(healthy_pisaster)$Year, 
+  "DayOfYear" = phyloseq::sample_data(healthy_pisaster)$DayOfYear, 
+  "Month" = phyloseq::sample_data(healthy_pisaster)$Month)
+
+
+richness_pis$Season <- factor(
+  richness_pis$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+
+pis_seasonal<- richness_pis %>%
+    pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = Season, y = value, color = Season)) +
+  geom_boxplot(outlier.color = NA) +
+ geom_jitter(alpha=0.3, height = 0, width = .2) +
+  labs(x = NULL, y = "Diversity (Inv. Simpson)") +
+  #facet_grid(Region~Year, scales = "free") +
+  #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
+  scale_color_brewer(palette="Set1") +
+  scale_shape_manual(values = c(8, 15)) +
+  theme_classic() +
+  theme(legend.position="right") +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1, size = 8)) + 
+  facet_grid(Region~Year) +
+  scale_y_continuous(limits = c(0, 200)) +
+  guides(color = "none") +
+  ggtitle("P. ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+pis_seasonal  
+derm_seasonal
+seawater_seasonal
+
+#combining all 3 hosts for alpha diversity
+  library(ggpubr)
+
+season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("a", "b", "c"))
+
+season_panel
+
+ggsave("season_panel.pdf", dpi=300, width=10, height=8, units="in")
+```
+
+
+```{r mixed effects model pis season}
+
+richness_pis
+
+mod1_season_pis<-glmer(InvSimpson~Season + (1 | Region ), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod2_year_pis<-glmer(InvSimpson~Year + (1 | Region), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod3_seasonyear_pis<- glmer(InvSimpson~Season*Year + (1 | Region ), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod4_nullseason_pis<- glmer(InvSimpson~ 1 + (1 | Region ), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+
+
+#boundary (singular) fit: see help('isSingular') warning for all
+
+#comparing all 4 models
+model.sel(mod1_season_pis, mod2_year_pis, mod3_seasonyear_pis, mod4_nullseason_pis, rank = "AIC", beta = "sd")
+
+#calculate R2 (marginal and conditional for each model)
+r.squaredGLMM(mod1_season_pis)
+r.squaredGLMM(mod2_year_pis)
+r.squaredGLMM(mod3_seasonyear_pis)
+r.squaredGLMM(mod4_nullseason_pis)
+
+# Simulate residuals
+simulated_residuals_pis <- simulateResiduals(mod1_season_pis)
+
+# Plot the diagnostics
+plot(simulated_residuals_pis)
+plotResiduals(simulated_residuals_pis)
+
+```
+
+
+##### WASTING LEVELS ALPHA DIVERSITY ######
+
+```{r alpha diversity by wasting score, Pisaster}
+
+pisaster_all <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Pisaster ochraceus"))
+
+
+sample_data(pisaster_all)
+
+richness_wasting <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(pisaster_all, measures = "InvSimpson"), 
+  "Region" = phyloseq::sample_data(pisaster_all)$SiteType, 
+  "WastingCategory" = phyloseq::sample_data(pisaster_all)$WastingCategory, 
+  "WastingScore" = phyloseq::sample_data(pisaster_all)$WastingScore, 
+   "DermisType" = phyloseq::sample_data(pisaster_all)$DermisType, 
+  "Year" = phyloseq::sample_data(pisaster_all)$Year)
+
+
+#Inverse simpson index by host
+richness_wasting_plot<-richness_wasting %>%
+  pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = WastingCategory, y = value, color = WastingCategory)) +
+ geom_boxplot(outlier.color = NA)  +
+ geom_jitter(aes(shape = WastingScore), alpha=0.3, height = 0, width = .2) +
+  labs(x = NULL, y = " Inv. Simpson") +
+  facet_wrap(~Region) +
+  scale_color_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"), name = "Host Type") +
+  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
+  theme_classic() +
+  theme(legend.position="right") +
+  theme(axis.text.x = element_text(hjust = 1, size = 8)) + 
+  guides(color = "none") +
+  theme(strip.background = element_blank())
+  #ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+richness_wasting_plot
+  
+```
+
+
+```{r mixed effects model pisaster wasting score}
+richness_wasting
+
+mod1_wastingcat<-glmer(InvSimpson~WastingCategory + (1 | Region ), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod2_year_only<-glmer(InvSimpson~Year + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod3_wastingyear<- glmer(InvSimpson~WastingCategory*Year + (1 | Region ), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+
+mod4_null_wasting<- glmer(InvSimpson~ 1 + (1 | Region ), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+
+
+#boundary (singular) fit: see help('isSingular') warning for all
+
+#comparing all 4 models
+model.sel(mod1_wastingcat, mod2_year_only, mod3_wastingyear, mod4_null_wasting, rank = "AIC", beta = "sd")
+
+#calculate R2 (marginal and conditional for each model)
+r.squaredGLMM(mod1_wastingcat)
+r.squaredGLMM(mod2_year_only)
+r.squaredGLMM(mod3_wastingyear)
+r.squaredGLMM(mod4_null_wasting)
+
+# Example model fit (assuming your data is ready)
+# model <- glmer(response ~ fixed_effects + (1|random_effect_group), family = binomial, data = mydata)
+
+# Simulate residuals
+simulated_residuals_derm <- simulateResiduals(mod1_season_derm)
+
+# Plot the diagnostics
+plot(simulated_residuals_derm)
+plotResiduals(simulated_residuals)
+
+```
+
+
+```{r alpha diversity by DermisType, Pisaster}
+
+pisaster_all <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Pisaster ochraceus"))
+
+
+sample_data(pisaster_all)
+
+richness_wasting_swabtype <- data.frame(
+  "InvSimpson" = phyloseq::estimate_richness(pisaster_all, measures = "InvSimpson"), 
+  "Region" = phyloseq::sample_data(pisaster_all)$SiteType, 
+  "WastingCategory" = phyloseq::sample_data(pisaster_all)$WastingCategory, 
+  "WastingScore" = phyloseq::sample_data(pisaster_all)$WastingScore,
+  "SwabType" = phyloseq::sample_data(pisaster_all)$DermisType2,
+   "DermisType" = phyloseq::sample_data(pisaster_all)$DermisType, 
+  "Year" = phyloseq::sample_data(pisaster_all)$Year)
+
+richness_wasting_swabtype  <- richness_wasting_swabtype %>%
+  mutate(SwabType = factor(SwabType, levels = c("H_healthy", "H_diseased", "L_diseased")))
+
+
+#Inverse simpson index by host
+richness_swabtype_plot<-richness_wasting_swabtype %>%
+  pivot_longer(cols = "InvSimpson",
+               names_to = "metric",
+               values_to = "value") %>%
+  ggplot(aes(x = SwabType, y = value, color = SwabType)) +
+ geom_boxplot(outlier.color = NA)  +
+ geom_jitter(aes(shape = WastingScore), alpha=0.4, height = 0, width = .2) +
+  labs(x = NULL, y = " Inverse Simpson Index") +
+  facet_grid(Year~Region, scales = "free", axes = "all_x") +
+  scale_color_manual(values = c("#26547c", "goldenrod", "#ef476f"), name = "Swab Type") +
+  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
+  theme_classic() +
+  theme(legend.position="right") +
+  guides(color = "none")
+  #ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+
+richness_swabtype_plot
+  
+```
+
