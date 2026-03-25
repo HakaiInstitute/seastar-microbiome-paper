@@ -11,7 +11,7 @@ First read in the phyloseq object that we need
 ```{r }
 
 #read in the required QC'ed phyloseq object
-decontam_filter_nonegs_prev <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs_prev.rds")
+decontam_filter_nonegs_prev <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs_prev.rds")
 
 ```
 

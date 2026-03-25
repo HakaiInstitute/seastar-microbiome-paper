@@ -9,7 +9,7 @@ First we need to load the necessary files.
 
 ```{r load files}
 
-setwd("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data")
+setwd("C:/Users/Carolyn/Documents/seastar-microbiome-paper/data")
 
 asvfile <-read.csv("asvtable_NCM_smiconly-runs1to8.csv", row.names=1, header = TRUE) 
 taxfile <-as.matrix(read.csv("smic_runs1to8_silva138-1_taxonomy.csv",row.names=1,header = TRUE)) 

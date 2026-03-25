@@ -1,0 +1,506 @@
+---
+title: "compare taxa means"
+author: "Colleen Kellogg"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(phyloseq)
+library(microViz)
+library(speedyseq)
+library(ggpubr)
+library(rstatix)
+library(dplyr)
+#library(microbiomeutilities)
+library(microbiome)
+library(tidyverse)
+library(kableExtra)
+library(tidyr)
+
+```
+
+## Load data and determine top genera
+```{R load data and determine top genera}
+#### prep phyloseq ####
+smicpf <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs_prev.rds")
+
+pis_gen <- smicpf %>%
+  transform("compositional") %>%
+  aggregate_taxa("Genus") %>%
+  subset_samples(Host == "Pisaster ochraceus")
+
+pis_genm <- speedyseq::psmelt(pis_gen)
+ pis_genm
+
+#### get top genera ####
+top_12g <- tax_top(pis_gen, n = 12, rank = "Genus")
+top_15g <- tax_top(pis_gen, n = 15, rank = "Genus")
+top_20g <- tax_top(pis_gen, n = 20, rank = "Genus")
+top_50g <- tax_top(pis_gen, n = 50, rank = "Genus") 
+
+top_50g
+```
+
+## Run wilcoxon test to compare means
+
+I went with 0.01 because BH is a more permissive multiple test correction. with holm @ 0.05, only 11/50 genera were significantly different. but with BH at 0.05, 36/50 were sig different and in some cases, they had minimal log2FC, with 0.01 it seems like it is a nice compromise, with 22/50 top genera showing significant differences that looks visibly different too. this can obviously be changed!
+
+```{R run wilcoxon test}
+#### stats — wilcox with BH correction ####
+#if you want to save the stats in a CSV file, do this.
+stats_results_category <- pis_genm %>%
+  filter(Genus %in% top_50g) %>%
+  group_by(Genus) %>%
+  wilcox_test(Abundance ~ WastingCategory) %>% #ref.group = "Healthy" -- by setting a ref.group that will only calculate and plot stats for in reference to that group (rather than also including severe vs mid); remove ref.group if you want to know about those too.
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj")
+
+#write_csv(stats_results_category,"SMIC-top50genera_wilcoxon_stats_results.csv")
+
+#to look at the results in table format:
+stats_results_category %>%
+  kable(
+    format   = "html",
+    digits   = 3,
+    caption  = "Results of comparison (wilcoxon test) of healthy, mildly and severely wasting pisaster sea stars",
+    # col.names = c("Genus", "value compared", "group1", "group2", "n1", "n2","statistic","p","p.adj","p.adj.signif")   # rename cols
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width        = FALSE,
+    position          = "center",
+    font_size         = 12
+  ) %>%
+  row_spec(0, bold = TRUE) %>%           # bold header row
+  column_spec(1, italic = TRUE)
+
+
+#### significant genera with at least one significant comparison vs Healthy ####
+
+sig_genera <- stats_results_category %>%
+  filter(p.adj < 0.01) %>% 
+  pull(Genus) %>%
+  unique()
+
+cat("Significant genera vs Healthy:", length(sig_genera), "\n")
+print(sig_genera)
+
+#### subset significant genera ####
+siggenera_to_plot <- pis_genm %>%
+  filter(Genus %in% sig_genera) %>%
+  mutate(WastingCategory = factor(WastingCategory, 
+                                  levels = c("Healthy", "Mild", "Severe")))
+
+
+```
+
+## A few ways to plot Wilcoxon test to compare group means
+
+```{R ways to visualize compare means results}
+#### plot ####
+library(scales)
+library(ggpubr)
+        
+#plot using ggpubr and geom_pwc, which employs the same wilcoxon test as wilcox_test in rstatix, so the results should be the same
+
+wastingcategory_boxplot <- ggboxplot(
+    siggenera_to_plot,
+    y = "Abundance",
+    x = "WastingCategory",
+    fill = "WastingCategory",
+    lwd = 0.3,
+    alpha = 0.5
+  ) + 
+  geom_pwc(
+    aes(group = WastingCategory),
+    tip.length = 0.01,
+    method = "wilcox_test",
+    ref.group = "Healthy",
+    p.adjust.method = "BH",
+    p.adjust.by = "group",
+    label = "p.adj.signif",         # or "p.adj" for numeric values
+    step.increase = 0.1,
+    size = 0.2,
+    label.size = 3,
+    vjust = 0.75,
+    hide.ns = TRUE
+  ) +
+  scale_fill_manual(
+    values = c("lightseagreen", "mediumorchid1", "mediumorchid4"),
+    name = "Wasting Category"
+  ) +
+  scale_y_sqrt() +
+  #scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1)) + 
+  facet_wrap(Genus ~., nrow = 4,) +
+  theme_classic() +
+  theme(
+    axis.text.x     = element_blank(),
+    axis.title.x    = element_blank(),
+    legend.position = "bottom",
+    strip.placement = "outside",
+    strip.text = element_text(size = 6),
+    strip.text.x.bottom = element_text(angle = 90, hjust = 1, size = 8),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  ylab("Relative Abundance")
+
+wastingcategory_boxplot
+
+ggsave("SMIC-wastingcategory_boxplot.pdf",wastingcategory_boxplot, height = 6, width = 8)
+
+
+
+#### calculate log fold change ####
+
+
+SMIC_siggenera_WC_log2FC<-pis_genm %>% group_by(Genus, WastingCategory) %>% summarise(MeanAbun = mean(Abundance)) %>% tidyr::pivot_wider(id_cols = Genus, values_from = MeanAbun, names_from = WastingCategory) %>% mutate(log2FC_HM = log2(Mild/Healthy), log2FC_HS = log2(Severe/Healthy), log2FC_MS = log2(Severe/Mild)) %>% filter(Genus %in% sig_genera)
+
+#### plot log2(fold change) bar plots ####
+
+# mild:healthy
+SMIC_mildhealthy_log2FC<-SMIC_siggenera_WC_log2FC %>%
+ggplot(aes(x = log2FC_HM, y = reorder(Genus, log2FC_HM))) +
+  geom_col() +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_bw() + 
+  ylab(NULL) +
+  xlab ("Log2(Fold Change of mildly-wasting:healthy sea stars)")
+
+SMIC_mildhealthy_log2FC
+
+#severe:healthy
+SMIC_severehealthy_log2FC<-SMIC_siggenera_WC_log2FC %>%
+ggplot(aes(x = log2FC_HS, y = reorder(Genus, log2FC_HS))) +
+  geom_col() +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_bw() + 
+  ylab(NULL) +
+  xlab ("Log2(Fold Change of severe-wasting:healthy sea stars)")
+
+SMIC_severehealthy_log2FC
+
+#### pivot log2FC data frame longer for plotting ###
+
+SMIC_siggenera_WC_log2FC.long<-SMIC_siggenera_WC_log2FC %>% pivot_longer(
+  cols = c(log2FC_HS,log2FC_HM, log2FC_MS), names_to = "abun_comp", values_to = "Log2FC"
+) %>% mutate(abun_comp = recode(abun_comp,
+    "log2FC_HM" = "Mild:Healthy",
+    "log2FC_HS" = "Severe:Healthy",
+    "log2FC_MS" = "Severe:Mild"
+  ))
+
+#### log2FC paired barplot ####
+
+SMIC_severehealthy_log2FC.bar<-SMIC_siggenera_WC_log2FC.long %>%
+ggplot(aes(x = Log2FC, y = reorder(Genus,Log2FC), fill = abun_comp)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison")+
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_classic() + 
+  ylab(NULL) +
+  xlab ("Log2 Fold Change")
+
+SMIC_severehealthy_log2FC.bar #need to figure out how to indicate significance
+
+
+#### log2 fold change faceted lollipop plot ####
+
+SMIC_severehealthy_log2FC.dots <- SMIC_siggenera_WC_log2FC.long %>%
+  ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), color = abun_comp)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_segment(
+    aes(x = 0, xend = Log2FC,
+        y = reorder(Genus, Log2FC), 
+        yend = reorder(Genus, Log2FC)),
+    linewidth = 0.4, alpha = 0.6        # lollipop stem
+  ) +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  scale_color_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison") +
+  theme_classic() +
+  ylab(NULL) +
+  xlab("Log2 Fold Change") +
+  facet_grid(~abun_comp) +
+  theme(strip.background = element_blank()) +
+  theme(legend.position = "none")
+
+SMIC_severehealthy_log2FC.dots
+
+# can we add an asterix if the difference is significant?
+
+#### join log2 fold change and wilcoxon results ####
+
+stats_results_summary <- stats_results_category %>%
+  unite(abun_comp, group2, group1, sep = ":", remove = FALSE)  %>% select(Genus, abun_comp, p.adj, p.adj.signif)
+
+
+SMIC_siggenera_WC_log2FC_sig<-left_join(SMIC_siggenera_WC_log2FC.long,stats_results_summary)
+
+SMIC_siggenera_WC_log2FC_sig
+
+#### lollipop plots with significance ####
+
+SMIC_siggenera_WC_log2FC_sig %>%
+  mutate(sig_label = ifelse(p.adj < 0.05, "*", "")) %>%   # or your significance column
+  ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), color = abun_comp)) +
+  geom_segment(
+    aes(x = 0, xend = Log2FC,
+        y = reorder(Genus, Log2FC),
+        yend = reorder(Genus, Log2FC)),
+    linewidth = 0.4, alpha = 0.6
+  ) +
+  geom_point(size = 4, alpha = 0.85) +
+  geom_text(aes(label = sig_label),
+            color = "white",              # white asterisk inside dot
+            size = 4,
+            fontface = "bold",
+            vjust = 0.75 ) +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  # scale_color_manual(values = c("#ffd166", "#ef476f"), name = "Comparison")
+  scale_color_manual(values = c("#ffd166", "#ef476f", "coral1"), )+
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ylab(NULL) +
+  xlab("Log2 Fold Change") +
+  facet_grid(~abun_comp)
+
+#### bar plot with significance ####
+logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
+  mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
+  ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
+  geom_col(position = "dodge") +
+  # stars at end of each bar
+  geom_text(
+    aes(label = sig_label,
+        x = ifelse(Log2FC >= 0,       # place star at end of bar
+                   Log2FC + 0.05,     # positive bars: right of bar
+                   Log2FC - 0.05),    # negative bars: left of bar
+        hjust = ifelse(Log2FC >= 0, 0, 1),
+        vjust = 0.75),
+    position = position_dodge(width = 0.9),
+    color = "grey20",
+    size = 3.5
+  ) +
+  scale_fill_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison") +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylab(NULL) +
+  xlab("Log2 Fold Change") + 
+  facet_grid(~abun_comp) +
+  theme(strip.background = element_blank())  + 
+  ggtitle("Wasting Category Comparison")
+
+logchange_category
+
+```
+
+
+#### RUNNING THE SAME ANALYIS BUT WITH TISSUE TYPE INSTEAD OF WASTING CATEGORY   ####
+
+```{r}
+#### stats — wilcox with BH correction ####
+
+stats_results_tissue <- pis_genm %>%
+  filter(Genus %in% top_50g) %>%
+  group_by(Genus) %>%
+  wilcox_test(Abundance ~ DermisType2) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj")
+
+stats_results_tissue
+
+sig_genera_tissue <- stats_results_tissue %>%
+  filter(p.adj < 0.01) %>% 
+  pull(Genus) %>%
+  unique()
+
+cat("Significant genera vs H_healthy:", length(sig_genera_tissue), "\n")
+
+print(sig_genera_tissue)
+
+
+#### subset significant genera ####
+siggenera_to_plot_tissue <- pis_genm %>%
+  filter(Genus %in% sig_genera_tissue) %>%
+  mutate(DermisType2 = factor(DermisType2, 
+                                  levels = c("H_healthy", "H_diseased", "L_diseased")))
+
+```
+
+#now trying plotting across tissue types
+
+```{r}
+
+tissuetype_boxplot <- ggboxplot(
+    siggenera_to_plot_tissue,
+    y = "Abundance",
+    x = "DermisType2",
+    fill = "DermisType2",
+    lwd = 0.3,
+    alpha = 0.7
+  ) +
+  geom_pwc(
+    aes(group = DermisType2),
+    tip.length = 0.01,
+    method = "wilcox_test",
+    ref.group = "H_healthy",
+    p.adjust.method = "BH",
+    p.adjust.by = "group",
+    label = "p.adj.signif",         # or "p.adj" for numeric values
+    step.increase = 0.1,
+    size = 0.2,
+    label.size = 3,
+    vjust = 0.75,
+    hide.ns = TRUE
+  ) +
+  scale_fill_manual(
+    values = c("olivedrab", "deepskyblue", "deepskyblue4"),
+    name = "Tissue Type"
+  ) +
+  scale_y_sqrt() +
+  # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1),    
+  facet_wrap(Genus ~., nrow = 4,) +
+  theme_bw() +
+  theme(
+    axis.text.x     = element_blank(),
+    axis.title.x    = element_blank(),
+    legend.position = "bottom",
+    strip.placement = "outside",
+    strip.text = element_text(size = 6),
+    strip.text.x.bottom = element_text(angle = 90, hjust = 1, size = 8),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  ylab("Relative Abundance")
+
+tissuetype_boxplot
+
+
+```
+
+
+```{r}
+#### calculate log fold change ####
+
+SMIC_siggenera_TT_log2FC<-pis_genm %>%
+  group_by(Genus, DermisType2) %>%
+  summarise(MeanAbun = mean(Abundance)) %>%
+  pivot_wider(id_cols = Genus, values_from = MeanAbun, names_from = DermisType2) %>%
+  mutate(log2FC_HH = log2(H_diseased/H_healthy), log2FC_HL1 = log2(L_diseased/H_diseased), log2FC_HL2 = log2(L_diseased/H_healthy), ) %>% filter(Genus %in% sig_genera) 
+
+SMIC_siggenera_TT_log2FC
+
+
+#### pivot log2FC data frame longer for plotting ###
+
+SMIC_siggenera_TT_log2FC.long<-SMIC_siggenera_TT_log2FC %>% pivot_longer(
+  cols = c(log2FC_HH,log2FC_HL1, log2FC_HL2), names_to = "abun_comp", values_to = "Log2FC"
+) %>% mutate(abun_comp = recode(abun_comp,
+    "log2FC_HH" = "H_diseased:H_healthy",
+    "log2FC_HL1" = "L_diseased:H_diseased", 
+    "log2FC_HL2" = "L_diseased:H_healthy"
+  ))
+
+SMIC_siggenera_TT_log2FC.long
+
+#### log2FC paired barplot ####
+
+SMIC_tissuetype_log2FC.bar<-SMIC_siggenera_TT_log2FC.long %>%
+ggplot(aes(x = Log2FC, y = reorder(Genus,Log2FC), fill = abun_comp)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("firebrick", "mediumpurple1", "cyan4"), name = "Comparison")+
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_classic() + 
+  ylab(NULL) +
+  xlab ("Log2 Fold Change")
+
+
+```
+
+```{r}
+
+#### join log2 fold change and wilcoxon results ####
+
+stats_results_summary_tissue <- stats_results_tissue %>%
+  unite(abun_comp, group2, group1, sep = ":", remove = FALSE)  %>% select(Genus, abun_comp, p.adj, p.adj.signif)
+
+stats_results_summary_tissue
+
+SMIC_siggenera_TT_log2FC_sig<-left_join(SMIC_siggenera_TT_log2FC.long,stats_results_summary_tissue)
+
+
+SMIC_siggenera_TT_log2FC_sig
+
+#blues
+SMIC_siggenera_TT_log2FC_sig %>%
+  mutate(sig_label = ifelse(p.adj < 0.05, "*", "")) %>%   # or your significance column
+  ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), color = abun_comp)) +
+  geom_segment(
+    aes(x = 0, xend = Log2FC,
+        y = reorder(Genus, Log2FC),
+        yend = reorder(Genus, Log2FC)),
+    linewidth = 0.4, alpha = 0.6
+  ) +
+  geom_point(size = 4, alpha = 0.85) +
+  geom_text(aes(label = sig_label),
+            color = "white",              # white asterisk inside dot
+            size = 4,
+            fontface = "bold",
+            vjust = 0.75 ) +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  # scale_color_manual(values = c("#ffd166", "#ef476f"), name = "Comparison")
+  scale_color_manual(values = c("#84b0a9","#1f3e74", "mediumpurple1"), )+
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ylab(NULL) +
+  xlab("Log2 Fold Change") +
+  facet_grid(~abun_comp)
+
+
+#### bar plot with significance ####
+logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
+  mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
+  ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
+  geom_col(position = "dodge") +
+  # stars at end of each bar
+  geom_text(
+    aes(label = sig_label,
+        x = ifelse(Log2FC >= 0,       # place star at end of bar
+                   Log2FC + 0.05,     # positive bars: right of bar
+                   Log2FC - 0.05),    # negative bars: left of bar
+        hjust = ifelse(Log2FC >= 0, 0, 1),
+        vjust = 0.75),
+    position = position_dodge(width = 0.9),
+    color = "grey20",
+    size = 3.5
+  ) +
+  scale_fill_manual(values = c("firebrick", "mediumpurple1", "cyan4"), name = "Comparison") +
+  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ylab(NULL) +
+  xlab("Log2 Fold Change") + 
+  facet_grid(~abun_comp) + 
+  ggtitle("Tissue Type Comparison")
+
+logchange_tissue
+
+```
+
+
+#if we want to combine both log change plots
+
+```{r}
+
+logchange_panel<-ggarrange(logchange_category, logchange_tissue, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
+
+logchange_panel
+
+ggsave("logchange_panel.pdf", dpi=300, width=10, height=8, units="in")
+
+```
+
+
