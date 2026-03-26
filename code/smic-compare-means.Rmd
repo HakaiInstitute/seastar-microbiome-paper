@@ -285,7 +285,7 @@ logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
   ) +
   scale_fill_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison") +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_classic() +
+  theme_minimal() +
   theme(legend.position = "none") +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 

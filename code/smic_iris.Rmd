@@ -12,13 +12,13 @@ library(phyloseq)
 library(speedyseq)
 library(rcartocolor)
 library(RColorBrewer)
+library(ggpubr)
 
 ```
 
 ```{R load data}
 
-# smic<-readRDS("decontam_filter_nonegs.rds")
-smicpf<-readRDS("decontam_filter_nonegs_prev.rds")
+smicpf<-readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs_prev.rds")
 
 ```
 
@@ -61,6 +61,9 @@ pis_ord <- smicpf %>%
   dist_calc("bray") %>%
   ord_calc(method = "NMDS")
 
+pis_ord
+
+
 pis_iris<-ord_plot_iris(
   data = pis_ord,
   tax_level = "Class",
@@ -73,7 +76,7 @@ pis_iris<-ord_plot_iris(
 
 pis_iris
 
-# ggsave(filename = "PISASTER-iris-plot-class-spectral.pdf",pis_iris, dpi = 300, width = 8, height = 6)
+ggsave(filename = "PISASTER-iris-plot-class-spectral.pdf", pis_iris, dpi = 300, width = 8, height = 6)
 
 ```
 
@@ -97,10 +100,12 @@ derm_iris<-ord_plot_iris(
 ) +
   scale_color_manual(values = c("#a6bddb","#1c9099"))
 
+derm_iris
+
 # ggsave(filename = "DERMASTERIAS-iris-plot-class_spectral.pdf",derm_iris, dpi = 300, width = 8, height = 6)
 
 #### make iris panel ####
-iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 1, common.legend = TRUE, legend = "right", labels = c("a. Pisaster ochraceus","b. Dermasterias imbricata"), font.label = list(face ="plain",size = 10), hjust = -0.25)
+iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 1, common.legend = TRUE, legend = "right", labels = c("a. P. ochraceus","b. D. imbricata"), font.label = list(face ="plain",size = 10), hjust = -0.25)
 
 iris_grid
 
@@ -138,7 +143,8 @@ all_iris<-ord_plot_iris(
 ) +
   scale_color_manual(values = c("#AD002AFF","#925E9FFF", "#0099B4FF"))
 
-ggsave("all_host_iris_pcoa.pdf", all_iris, height = 5, width = 6)
+ggsave("all_host_iris_nmds.pdf", all_iris, height = 5, width = 6)
+
 
 ```
 
