@@ -55,30 +55,59 @@ df_core_pisaster <- psmelt(pisaster_healthy_genus)
 # Detect core genera 
 core_genus_pisaster_healthy <- core_members(pisaster_healthy_genus, detection = 0.001, prevalence = 75/100)
 
+#map back to taxonomic names rather than ASV Ids
+core_taxa_pioc <- tax_table(pisaster_healthy_genus)[core_genus_pisaster_healthy, ]
+
+core_tax_df_pioc <- as.data.frame(core_taxa_pioc)
+
+pioc_taxa_list<-core_tax_df_pioc$Genus
+
+pioc_taxa_list
+
 
 #### Option 1: Add a Core column to the melted data frame ####
 # Add a new column to df_core_pisaster data frame to indicate the core genera or other
 df_core_pisaster <- df_core_pisaster %>% mutate(Core = ifelse(OTU %in% core_genus_pisaster_healthy, Genus, "Other")) 
 
+df_core_pisaster
+
 #set plotting order
 unique(df_core_pisaster$Core)
 df_core_pisaster$Core = factor(df_core_pisaster$Core, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Yoonia-Loktanella", "Flavobacteriaceae Family", "Polaribacter", "Saprospiraceae Family", "Endozoicomonas","Reichenbachiella","Roseibacillus","Rubritalea","Other" ))                        
 
-# write.csv(df_core_pisaster, "df_core_pisaster.csv")
+ write.csv(df_core_pisaster, "df_core_pisaster.csv")
 
 # Plot everything
 
 #df_core_pisaster$Date <- as.Date(df_core_pisaster$Date, format="%Y-%m-%d")
 df_core_pisaster$YearMonth<-factor(df_core_pisaster$YearMonth)
 
+core_colors <- c(
+  "Spirochaetia Class" = "#8B004B",
+  "Spirochaetaceae Family" = "#B2182B",
+  "Salinispira" = "#EF6548",
+  "Rhodobacteraceae Family" = "#F4A261",
+  "Yoonia-Loktanella" = "#E9C46A",
+  "Flavobacteriaceae Family" = "#F1E4A6",
+  "Polaribacter" = "#D9E4A5",
+  "Saprospiraceae Family" = "#B8DE8F",
+  "Endozoicomonas" = "#7FCDBB",
+  "Reichenbachiella" = "#41B6C4",
+  "Roseibacillus" = "#1D91C0",
+  "Rubritalea" = "#6A51A3",
+  "Other" = "grey80",
+  "NA" = "grey40"
+)
+
+df_core_pisaster$Core
 pis_core_plot<-df_core_pisaster %>%
-ggplot(aes(YearMonth, Abundance, fill = Core)) +
+ggplot(aes(SiteType, Abundance, fill = Core)) +
   geom_bar(stat = "identity", position = "fill") +
   theme_classic() +
   scale_fill_manual(values = core_colors, drop = FALSE) +
-  facet_wrap(~SiteType) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
-  ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+  #facet_wrap(~SiteType) +
+  #theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  ggtitle("P. ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
 
 pis_core_plot
 ```
@@ -98,9 +127,19 @@ df_core_derm <- psmelt(derm_healthy_genus)
 # Detect core genera 
 core_genus_derm <- core_members(derm_healthy_genus, detection = 0.001, prevalence = 75/100)
 
+#map back to taxonomic names rather than ASV Ids
+core_taxa_derm <- tax_table(derm_healthy_genus)[core_genus_derm, ]
+
+core_tax_df <- as.data.frame(core_taxa_derm)
+
+derm_taxa_list<-core_tax_df$Genus
+
+derm_taxa_list
+
 #### Option 1: Add a Core column to the melted data frame ####
 # Add a new column to df_core_pisaster data frame to indicate the core genera or other
 df_core_derm <- df_core_derm %>% mutate(Core = ifelse(OTU %in% core_genus_derm, Genus, "Other")) 
+
 
 #set plotting order
 unique(df_core_derm$Core)
@@ -114,17 +153,16 @@ df_core_derm$Core = factor(df_core_derm$Core, levels = c("Saprospiraceae Family"
 df_core_derm$YearMonth<-factor(df_core_derm$YearMonth)
 
 derm_core_plot<-df_core_derm %>%
-ggplot(aes(YearMonth, Abundance, fill = Core)) +
+ggplot(aes(SiteType, Abundance, fill = Core)) +
   geom_bar(stat = "identity", position = "fill") +
   theme_classic()+
   scale_fill_manual(values = core_colors, drop = FALSE) +
-  facet_wrap(~SiteType) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
-  ggtitle("Dermasterias imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+ # facet_wrap(~SiteType) +
+ # theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
 
 derm_core_plot
 
-ggarrange(pis_core_plot, derm_core_plot, ncol=1, common.legend=TRUE, align = "v", legend = "right", labels = c("A", "B"))
 
 #to make sure colors of core taxa are consistent when two species are combined
 core_levels <- c(
@@ -148,25 +186,151 @@ core_levels <- c(
 df_core_derm$Core <- factor(df_core_derm$Core, levels = core_levels)
 df_core_pisaster$Core <- factor(df_core_pisaster$Core, levels = core_levels)
 
-core_colors <- c(
-  "Spirochaetia Class" = "#8B004B",
-  "Spirochaetaceae Family" = "#B2182B",
-  "Salinispira" = "#EF6548",
-  "Rhodobacteraceae Family" = "#F4A261",
-  "Yoonia-Loktanella" = "#E9C46A",
-  "Flavobacteriaceae Family" = "#F1E4A6",
-  "Polaribacter" = "#D9E4A5",
-  "Saprospiraceae Family" = "#B8DE8F",
-  "Endozoicomonas" = "#7FCDBB",
-  "Reichenbachiella" = "#41B6C4",
-  "Roseibacillus" = "#1D91C0",
-  "Rubritalea" = "#6A51A3",
-  "Other" = "grey80",
-  "NA" = "grey40"
-)
+
+ggarrange(pis_core_plot, derm_core_plot, ncol=1, common.legend=TRUE, align = "v", legend = "right", labels = c("a", "b"))
+
+
 ```
 
+If we wanted to do a venn diagram to compare the core taxa between sea stars
 
+```{r}
+
+
+library(ggVennDiagram)
+
+venn <- list(
+  Derm = derm_taxa_list,
+  Pioc = pioc_taxa_list
+)
+
+ggVennDiagram(venn, label = "none") +
+  scale_fill_gradient(low = "lightpink", high = "purple2")
+)
+
+Could also incoporate the indicator taxa here
+
+venn2 <- list(
+  Derm = derm_indicators,
+  Pioc = pioc_indicators
+)
+
+ggVennDiagram(venn2, label = "none") +
+  scale_fill_gradient(low = "lightpink", high = "purple2")
+)
+
+
+derm_indicators <- list("Bdellovibrio", "EC94", "Peredibacter", "Rhodobacteraceae Family", "Thiothrix")
+
+pioc_indicators <- list("Candidatus_Hepatoplasma", "Endozoicomonas", "Gracilibacteria", "Psychroflexus", "Reichenbachiella", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class")
+
+derm_core <-list("EC94", "Flavobacteriaceae Family", "Saprospiraceae Family", "Rhodobacteraceae Family", "Rubritalea")
+
+pioc_core <- list("Endozoicomonas", "Flavobacteriaceae Family", "Polaribacter", "Reichenbachiella", "Rhodobacteraceae Family", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class", "Roseibacillus", "Rubritalea", "Saprospiraceae Family","Yoonia-Loktanella")
+
+
+pisaster_indicator <- as.character(unlist(pioc_indicators))
+pisaster_core      <- as.character(unlist(pioc_core))
+dermasterias_indicator <- as.character(unlist(derm_indicators))
+dermasterias_core      <- as.character(unlist(derm_core))
+
+pisaster_indicator <- unique(na.omit(pisaster_indicator))
+pisaster_core      <- unique(na.omit(pisaster_core))
+dermasterias_indicator <- unique(na.omit(dermasterias_indicator))
+dermasterias_core      <- unique(na.omit(dermasterias_core))
+
+
+venn_core_ind <- list(
+  Derm_core = derm_taxa_list,
+  Pioc_core = pioc_taxa_list,
+  Derm_ind = derm_indicators,
+  Pioc_ind = pioc_indicators
+)
+
+
+str(pisaster_indicator)
+str(pisaster_core)
+str(dermasterias_indicator)
+str(dermasterias_core)
+
+library(VennDiagram)
+
+install.packages("VennDiagram")
+library(VennDiagram)
+library(grid)
+
+venn.plot <- venn.diagram(
+  x = list(
+    Pisaster_Indicator = pisaster_indicator,
+    Pisaster_Core = pisaster_core,
+    Dermasterias_Indicator = dermasterias_indicator,
+    Dermasterias_Core = dermasterias_core
+  ),
+  filename = NULL,
+  fill = c("red", "blue", "green", "purple"),
+  alpha = 0.5,
+  cex = 1.5,
+  cat.cex = 1.2
+)
+
+grid.draw(venn.plot)
+
+
+library(UpSetR)
+
+# Combine all taxa
+all_taxa <- unique(c(pisaster_indicator,
+                     pisaster_core,
+                     dermasterias_indicator,
+                     dermasterias_core))
+
+# Create a presence/absence numeric data frame (0/1 instead of TRUE/FALSE)
+df_upset <- data.frame(
+  pisaster_indicator = as.integer(all_taxa %in% pisaster_indicator),
+  pisaster_core = as.integer(all_taxa %in% pisaster_core),
+  dermasterias_indicator = as.integer(all_taxa %in% dermasterias_indicator),
+  dermasterias_core = as.integer(all_taxa %in% dermasterias_core)
+)
+
+# Add taxa names as rownames (optional, for tracing)
+rownames(df_upset) <- all_taxa
+
+df_upset
+
+upset(df_upset, 
+      sets = c("pisaster_indicator", "pisaster_core", 
+               "dermasterias_indicator", "dermasterias_core"),
+      order.by = "freq")
+
+library(eulerr)
+
+taxa_lists <- list(
+  pisaster_indicator = pisaster_indicator,
+  pisaster_core = pisaster_core,
+  dermasterias_indicator = dermasterias_indicator,
+  dermasterias_core = dermasterias_core
+)
+
+fit <- euler(taxa_lists)
+
+library(scales)
+colors <- grey(rescale(overlap_sizes, to = c(0.8, 0.3)))  # bigger overlaps = darker
+
+
+plot(fit,
+     fills = list(
+       fill = colors,   # color by overlap size
+       alpha = 0.6      # slightly transparent
+     ),
+     edges = TRUE,       # show circle edges
+     quantities = TRUE,  # show counts
+     labels = list(font = 2, cex = 1), # bold labels
+     main = "Euler Diagram of 4 Taxa Lists with Overlap Coloring"
+)
+
+dev.off()
+
+```
 
 
 
