@@ -66,8 +66,8 @@ alpha_host_boxplot<-richness_host %>%
   #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
   theme_classic() +
   theme(legend.position="right") + guides(color = "none") +
-   theme(axis.text.x = element_blank()) +
-  theme(strip.background = element_blank())
+   theme(axis.text.x = element_blank()) 
+  #theme(strip.background = element_blank())
 
   
  alpha_host_boxplot     #boxplot version
@@ -148,19 +148,20 @@ seawater_seasonal<-richness_seawater %>%
     pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = Season, y = value, color = Season)) +
-  geom_boxplot(outlier.color = NA) +
+  ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
+  geom_boxplot(alpha = 0.3) +
  geom_jitter(alpha=0.3, height = 0, width = .2) +
   labs(x = NULL, y = "Inv. Simpson") +
   #scale_color_manual(values = c("darkslateblue", "springgreen3", "darkgoldenrod2", "darkorange"), name = "Season") +
-  scale_color_brewer(palette="Set1") +
+  #scale_color_brewer(palette="Set1") +
   scale_shape_manual(values = c(8, 15)) +
   theme_classic() + 
-  theme(axis.text.x = element_blank()) +
-  facet_grid(Region~Year) +
+  #theme(axis.text.x = element_blank()) +
+  facet_grid(Region~Year, axes = "all_x") +
   scale_y_continuous(limits = c(0, 200)) +
   guides(color = "none") +
-  ggtitle("Seawater") + theme(plot.title = element_text(size = 10))
+  ggtitle("Seawater") + theme(plot.title = element_text(size = 10)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 seawater_seasonal
@@ -229,21 +230,22 @@ derm_seasonal<- richness_derm %>%
     pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = Season, y = value, color = Season)) +
-  geom_boxplot() +
+  ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
+  geom_boxplot(alpha=0.3) +
  geom_jitter(height = 0, width = .2, alpha = 0.3) +
   labs(x = NULL, y = "Inv. Simpson") +
   #facet_grid(Region~Year, scales = "free") +
   #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
-  scale_color_brewer(palette="Set1") +
-  scale_shape_manual(values = c(8, 15)) +
+  #scale_color_brewer(palette="Set1") +
+ # scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
   theme(legend.position="right") +
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
-  facet_grid(Region~Year) + theme(axis.text.x = element_blank()) +
+  facet_grid(Region~Year, axes = "all_x") + #theme(axis.text.x = element_blank()) +
   scale_y_continuous(limits = c(0, 200)) +
   guides(color = "none") +
-  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
 derm_seasonal
 
@@ -311,18 +313,17 @@ pis_seasonal<- richness_pis %>%
     pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = Season, y = value, color = Season)) +
-  geom_boxplot(outlier.color = NA) +
+  ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
+  geom_boxplot(alpha=0.3) +
  geom_jitter(alpha=0.3, height = 0, width = .2) +
-  labs(x = NULL, y = "Diversity (Inv. Simpson)") +
+  labs(x = NULL, y = "Inv. Simpson") +
   #facet_grid(Region~Year, scales = "free") +
   #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
-  scale_color_brewer(palette="Set1") +
-  scale_shape_manual(values = c(8, 15)) +
+  #scale_color_brewer(palette="Set1") +
   theme_classic() +
   theme(legend.position="right") +
-  theme(axis.text.x = element_text(angle = 20, hjust = 1, size = 8)) + 
-  facet_grid(Region~Year) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) + 
+  facet_grid(Region~Year, axes = "all_x") +
   scale_y_continuous(limits = c(0, 200)) +
   guides(color = "none") +
   ggtitle("P. ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))

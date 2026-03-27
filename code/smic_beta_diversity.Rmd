@@ -22,6 +22,7 @@ library(ggplot2)
 library(vegan)
 library(ggpubr)
 library(RColorBrewer)
+library(microViz)
 
 ```
 
@@ -60,7 +61,7 @@ nmds_host
 
 alpha_host_boxplot
 
-fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, common.legend = TRUE)
+fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, heights = c(1, 1.7), common.legend = TRUE)
 fig2
 
 ggsave("fig2.pdf", dpi=300, width=10, height=8, units="in")
@@ -123,8 +124,8 @@ seawater.nmds <- ordinate(seawater_norm, method = "NMDS", distance = "bray")
 seawater_region_ord<-plot_ordination(
   physeq = seawater_norm,
   ordination = seawater.nmds,
-  color = "SiteType") +
-  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  color = "SiteType", shape = "Season") +
+  scale_color_manual(values = c("violet","#1c9099")) + 
   theme_classic() +
    ggtitle("Seawater")
 
@@ -165,9 +166,9 @@ derm_region_ord<-plot_ordination(
   physeq = derm_norm,
   ordination = derm.nmds,
   color = "SiteType") +
-  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  scale_color_manual(values = c("violet","#1c9099")) + 
   theme_classic() +
-   ggtitle("D. imbricata")
+   ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
 
 derm_region_ord
 
@@ -206,9 +207,9 @@ pis_region_ord<-plot_ordination(
   physeq = pis_norm,
   ordination = pis.nmds,
   color = "SiteType") +
-  scale_color_manual(values = c("#a6bddb","#1c9099")) + 
+  scale_color_manual(values = c("violet","#1c9099")) + 
   theme_classic() +
-   ggtitle("P. ochraceus")
+   ggtitle("P. ochraceus") +theme(plot.title = element_text(size = 10, face = "italic"))
 
 pis_region_ord
 
