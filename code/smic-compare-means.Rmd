@@ -134,7 +134,7 @@ wastingcategory_boxplot <- ggboxplot(
   scale_y_sqrt() +
   #scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1)) + 
   facet_wrap(Genus ~., nrow = 4,) +
-  theme_classic() +
+  theme_bw() +
   theme(
     axis.text.x     = element_blank(),
     axis.title.x    = element_blank(),
@@ -192,17 +192,22 @@ SMIC_siggenera_WC_log2FC.long<-SMIC_siggenera_WC_log2FC %>% pivot_longer(
     "log2FC_MS" = "Severe:Mild"
   ))
 
+SMIC_siggenera_WC_log2FC.long$abun_comp <- factor(SMIC_siggenera_WC_log2FC.long$abun_comp, levels = c("Mild:Healthy", "Severe:Mild", "Severe:Healthy"))
+
 #### log2FC paired barplot ####
 
 SMIC_severehealthy_log2FC.bar<-SMIC_siggenera_WC_log2FC.long %>%
 ggplot(aes(x = Log2FC, y = reorder(Genus,Log2FC), fill = abun_comp)) +
   geom_col(position = "dodge") +
-  scale_fill_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison")+
+  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Comparison")+
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_classic() + 
+  theme_bw() + 
   ylab(NULL) +
-  xlab ("Log2 Fold Change")
-
+  xlab ("Log2 Fold Change") +
+  coord_flip() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+ggtitle("Differential abundance by Wasting Category")
+  
 SMIC_severehealthy_log2FC.bar #need to figure out how to indicate significance
 
 
@@ -239,6 +244,7 @@ stats_results_summary <- stats_results_category %>%
 SMIC_siggenera_WC_log2FC_sig<-left_join(SMIC_siggenera_WC_log2FC.long,stats_results_summary)
 
 SMIC_siggenera_WC_log2FC_sig
+write.csv(SMIC_siggenera_WC_log2FC_sig, file = "SMIC_siggenera_wastingcat_sig.csv", row.names = FALSE)
 
 #### lollipop plots with significance ####
 
@@ -266,11 +272,14 @@ SMIC_siggenera_WC_log2FC_sig %>%
   xlab("Log2 Fold Change") +
   facet_grid(~abun_comp)
 
+#put comparisons in desired order
+SMIC_siggenera_WC_log2FC_sig$abun_comp <- factor(SMIC_siggenera_WC_log2FC_sig$abun_comp, levels = c("Mild:Healthy", "Severe:Mild", "Severe:Healthy"))
+
 #### bar plot with significance ####
 logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
   mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
   ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
-  geom_col(position = "dodge") +
+  geom_col(position = "dodge", width = 0.7) +
   # stars at end of each bar
   geom_text(
     aes(label = sig_label,
@@ -283,13 +292,12 @@ logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
     color = "grey20",
     size = 3.5
   ) +
-  scale_fill_manual(values = c("#ffd166", "#ef476f", "coral1"), name = "Comparison") +
+  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Comparison", 
+                    labels = c("Mild : Healthy", "Severe : Mild", "Severe : Healthy")) +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_minimal() +
-  theme(legend.position = "none") +
+  theme_bw() +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 
-  facet_grid(~abun_comp) +
   theme(strip.background = element_blank())  + 
   ggtitle("Wasting Category Comparison")
 
@@ -340,7 +348,7 @@ tissuetype_boxplot <- ggboxplot(
     x = "DermisType2",
     fill = "DermisType2",
     lwd = 0.3,
-    alpha = 0.7
+    alpha = 0.5
   ) +
   geom_pwc(
     aes(group = DermisType2),
@@ -358,8 +366,7 @@ tissuetype_boxplot <- ggboxplot(
   ) +
   scale_fill_manual(
     values = c("olivedrab", "deepskyblue", "deepskyblue4"),
-    name = "Tissue Type"
-  ) +
+    labels = c("AsympH", "WastingNL", "WastingL")) +
   scale_y_sqrt() +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1),    
   facet_wrap(Genus ~., nrow = 4,) +
@@ -389,7 +396,7 @@ SMIC_siggenera_TT_log2FC<-pis_genm %>%
   group_by(Genus, DermisType2) %>%
   summarise(MeanAbun = mean(Abundance)) %>%
   pivot_wider(id_cols = Genus, values_from = MeanAbun, names_from = DermisType2) %>%
-  mutate(log2FC_HH = log2(H_diseased/H_healthy), log2FC_HL1 = log2(L_diseased/H_diseased), log2FC_HL2 = log2(L_diseased/H_healthy), ) %>% filter(Genus %in% sig_genera) 
+  mutate(log2FC_HH = log2(H_diseased/H_healthy), log2FC_HL1 = log2(L_diseased/H_diseased), log2FC_HL2 = log2(L_diseased/H_healthy), ) %>% filter(Genus %in% sig_genera_tissue) 
 
 SMIC_siggenera_TT_log2FC
 
@@ -411,18 +418,39 @@ SMIC_siggenera_TT_log2FC.long
 SMIC_tissuetype_log2FC.bar<-SMIC_siggenera_TT_log2FC.long %>%
 ggplot(aes(x = Log2FC, y = reorder(Genus,Log2FC), fill = abun_comp)) +
   geom_col(position = "dodge") +
-  scale_fill_manual(values = c("firebrick", "mediumpurple1", "cyan4"), name = "Comparison")+
+  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Comparison")+
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_classic() + 
+  theme_bw() + 
   ylab(NULL) +
-  xlab ("Log2 Fold Change")
+  xlab ("Log2 Fold Change") +
+  coord_flip() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+   ggtitle("Differential abundance by Tissue Type")
 
+SMIC_tissuetype_log2FC.bar
 
 ```
+
+#if we want to combine both log change plots
+
+```{r}
+
+logchange_1<-ggarrange(SMIC_severehealthy_log2FC.bar, SMIC_tissuetype_log2FC.bar, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
+
+logchange_1
+
+ggsave("logchange_panel.pdf", dpi=300, width=10, height=8, units="in")
+
+```
+
+
+
 
 ```{r}
 
 #### join log2 fold change and wilcoxon results ####
+
+print(stats_results_tissue)
 
 stats_results_summary_tissue <- stats_results_tissue %>%
   unite(abun_comp, group2, group1, sep = ":", remove = FALSE)  %>% select(Genus, abun_comp, p.adj, p.adj.signif)
@@ -433,6 +461,8 @@ SMIC_siggenera_TT_log2FC_sig<-left_join(SMIC_siggenera_TT_log2FC.long,stats_resu
 
 
 SMIC_siggenera_TT_log2FC_sig
+
+write.csv(SMIC_siggenera_TT_log2FC_sig, file = "SMIC_siggenera_tissuetype_sig.csv", row.names = FALSE)
 
 #blues
 SMIC_siggenera_TT_log2FC_sig %>%
@@ -464,7 +494,7 @@ SMIC_siggenera_TT_log2FC_sig %>%
 logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
   mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
   ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
-  geom_col(position = "dodge") +
+  geom_col(position = "dodge", width = 0.7) +
   # stars at end of each bar
   geom_text(
     aes(label = sig_label,
@@ -477,13 +507,12 @@ logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
     color = "grey20",
     size = 3.5
   ) +
-  scale_fill_manual(values = c("firebrick", "mediumpurple1", "cyan4"), name = "Comparison") +
+  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Comparison", 
+                     labels = c("WastingNL : AsympH", "WastingL:  WastingNL", "WastingL : AsympH")) +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_minimal() +
-  theme(legend.position = "none") +
+  theme_bw() +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 
-  facet_grid(~abun_comp) + 
   ggtitle("Tissue Type Comparison")
 
 logchange_tissue
@@ -502,5 +531,86 @@ logchange_panel
 ggsave("logchange_panel.pdf", dpi=300, width=10, height=8, units="in")
 
 ```
+
+
+
+
+#### RUNNING THE SAME ANALYIS BUT WITH SEASON ####
+
+```{r}
+#### stats — wilcox with BH correction ####
+
+
+stats_results_season <- pis_genm %>%
+  filter(Genus %in% top_50g) %>%
+  group_by(Genus) %>%
+  wilcox_test(Abundance ~ Season) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj")
+
+
+sig_genera_season <- stats_results_season %>%
+  filter(p.adj < 0.01) %>% 
+  pull(Genus) %>%
+  unique()
+
+
+print(sig_genera_season)
+
+
+#### subset significant genera ####
+siggenera_to_plot_season <- pis_genm %>%
+  filter(Genus %in% sig_genera_season) %>%
+  mutate(Season = factor(Season, 
+                                  levels = c("Winter", "Spring", "Summer", "Fall")))
+
+```
+
+```{r}
+
+season_boxplot <- ggboxplot(
+    siggenera_to_plot_season,
+    y = "Abundance",
+    x = "Season",
+    fill = "Season",
+    lwd = 0.3,
+    alpha = 0.7
+  ) +
+  geom_pwc(
+    aes(group = Season),
+    tip.length = 0.01,
+    method = "wilcox_test",
+    p.adjust.method = "BH",
+    p.adjust.by = "group",
+    label = "p.adj.signif",         # or "p.adj" for numeric values
+    step.increase = 0.1,
+    size = 0.2,
+    label.size = 3,
+    vjust = 0.75,
+    hide.ns = TRUE
+  ) +
+  #scale_fill_manual(
+    #values = c("olivedrab", "deepskyblue", "deepskyblue4"),
+    #name = "Tissue Type") +
+  scale_y_sqrt() +
+  # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1),    
+  facet_wrap(Genus ~., nrow = 4,) +
+  theme_bw() +
+  theme(
+    axis.text.x     = element_blank(),
+    axis.title.x    = element_blank(),
+    legend.position = "bottom",
+    strip.placement = "outside",
+    strip.text = element_text(size = 6),
+    strip.text.x.bottom = element_text(angle = 90, hjust = 1, size = 8),
+    strip.background = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  ylab("Relative Abundance")
+
+season_boxplot
+```
+
+
 
 
