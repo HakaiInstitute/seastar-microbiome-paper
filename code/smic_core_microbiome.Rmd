@@ -8,7 +8,7 @@ date: "2026-03-13"
 
 ```{r }
 
-decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data/decontam_filter_nonegs.rds")
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs.rds")
 
 ```
 
@@ -36,7 +36,12 @@ healthy_pisaster  <- ps_filter(
   decontam_filter_nonegs,
   (Host == "Pisaster ochraceus" & DermisType2 == "H_healthy"))
 
+seawater  <- ps_filter(
+  decontam_filter_nonegs,
+  (Host == "Seawater"))
+
 ```
+
 
 
 ##### CORE MICROBIOME ANALYSIS FOR EACH HOST/ENVIRONMENT #####
@@ -192,6 +197,42 @@ ggarrange(pis_core_plot, derm_core_plot, ncol=1, common.legend=TRUE, align = "v"
 
 ```
 
+And seawater
+
+```{r}
+#first need to transform the data
+seawater_trans <- microbiome::transform(seawater, "compositional")
+
+# Agglomerate first -- since we have repeated Genera in the taxa table
+seawater_genus <- tax_glom(seawater_trans, "Genus")
+
+# Melt phyloseq object to data frame
+df_core_seawater <- psmelt(seawater_genus)
+
+# Detect core genera 
+core_genus_seawater <- core_members(seawater_genus, detection = 0.001, prevalence = 75/100)
+
+#map back to taxonomic names rather than ASV Ids
+core_taxa_seawater <- tax_table(seawater_genus)[core_genus_seawater, ]
+
+core_tax_df_seawater <- as.data.frame(core_taxa_seawater)
+
+
+seawater_taxa_list<-core_tax_df_seawater$Genus
+
+seawater_taxa_list
+
+#### Option 1: Add a Core column to the melted data frame ####
+# Add a new column to df_core_pisaster data frame to indicate the core genera or other
+df_core_seawater <- df_core_seawater %>% mutate(Core = ifelse(OTU %in% core_genus_seawater, Genus, "Other")) 
+
+
+#set plotting order
+unique(df_core_seawater$Core)
+```
+
+
+
 If we wanted to do a venn diagram to compare the core taxa between sea stars
 
 ```{r}
@@ -201,14 +242,33 @@ library(ggVennDiagram)
 
 venn <- list(
   Derm = derm_taxa_list,
-  Pioc = pioc_taxa_list
-)
+  Pioc = pioc_taxa_list, 
+  Seawater = seawater_taxa_list)
 
-ggVennDiagram(venn, label = "none") +
-  scale_fill_gradient(low = "lightpink", high = "purple2")
-)
+ggVennDiagram(venn, label = "count") +
+  scale_fill_gradient(low = "white", high = "steelblue")
 
-Could also incoporate the indicator taxa here
+
+Derm <- unique(derm_taxa_list)
+Pioc <- unique(pioc_taxa_list)
+Seawater <- unique(seawater_taxa_list)
+
+derm_only <- setdiff(Derm, union(Pioc, Seawater))
+pioc_only <- setdiff(Pioc, union(Derm, Seawater))
+seawater_only <- setdiff(Seawater, union(Derm, Pioc))
+
+derm_pioc <- setdiff(intersect(Derm, Pioc), Seawater)
+derm_seawater <- setdiff(intersect(Derm, Seawater), Pioc)
+pioc_seawater <- setdiff(intersect(Pioc, Seawater), Derm)
+
+all_three <- Reduce(intersect, list(Derm, Pioc, Seawater))
+
+all_three
+
+
+#Could also incoporate the indicator taxa here
+
+
 
 venn2 <- list(
   Derm = derm_indicators,
@@ -216,13 +276,14 @@ venn2 <- list(
 )
 
 ggVennDiagram(venn2, label = "none") +
-  scale_fill_gradient(low = "lightpink", high = "purple2")
-)
+  scale_fill_gradient(low = "white", high = "mediumorchid1")
 
 
 derm_indicators <- list("Bdellovibrio", "EC94", "Peredibacter", "Rhodobacteraceae Family", "Thiothrix")
 
 pioc_indicators <- list("Candidatus_Hepatoplasma", "Endozoicomonas", "Gracilibacteria", "Psychroflexus", "Reichenbachiella", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class")
+
+seawater_indicators
 
 derm_core <-list("EC94", "Flavobacteriaceae Family", "Saprospiraceae Family", "Rhodobacteraceae Family", "Rubritalea")
 
