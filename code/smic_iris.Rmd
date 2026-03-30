@@ -72,7 +72,7 @@ pis_iris<-ord_plot_iris(
   tax_order = top_classes,
   palette = top_class_pal
 ) +
-  scale_color_manual(values = c("#a6bddb","#1c9099"))
+  scale_color_manual(values = c("orange","mediumturquoise"))
 
 pis_iris
 
@@ -98,7 +98,7 @@ derm_iris<-ord_plot_iris(
   anno_colour = "SiteType",
   palette = top_class_pal
 ) +
-  scale_color_manual(values = c("#a6bddb","#1c9099"))
+  scale_color_manual(values = c("orange","mediumturquoise"))
 
 derm_iris
 
