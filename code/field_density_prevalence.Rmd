@@ -7,7 +7,7 @@ date: "2026-03-24"
 ```{r}
 
 #Load in the field data
-setwd("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/data")
+setwd("C:/Users/Carolyn/Documents/seastar-microbiome-paper/data")
 
 field_data <-read.csv("field_data_all.csv", header = TRUE) 
 
@@ -97,17 +97,16 @@ dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
   scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
-  theme_classic() + facet_wrap(~site, ncol=1) +
-  theme(plot.title = ggtext::element_markdown(hjust = 0.5),
-        panel.grid.major.y = element_line(linetype = 'dotted'),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text = element_markdown(colour = "black"),
-        axis.ticks = element_line(colour = "black"),
-        strip.text = element_markdown(colour = "black"),
-        legend.text = element_text(face = "italic")) +
-   theme(
-  strip.background = element_blank()
-)
+  theme_classic() + facet_wrap(~site, ncol=1) 
+
+  #theme(plot.title = ggtext::element_markdown(hjust = 0.5),
+        #panel.grid.major.y = element_line(linetype = 'dotted'),
+        #axis.text.x = element_text(angle = 45, hjust = 1),
+        #axis.text = element_markdown(colour = "black"),
+       # axis.ticks = element_line(colour = "black"),
+        #strip.text = element_markdown(colour = "black"),
+       # legend.text = element_text(face = "italic")) +
+   #theme(strip.background = element_blank())
 
 dens_calvert
 
@@ -137,19 +136,7 @@ dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
   scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
-  theme_classic() + facet_wrap(~site, ncol=1) +
- theme(plot.title = ggtext::element_markdown(hjust = 0.5),
-        panel.grid.major.y = element_line(linetype = 'dotted'),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text = element_markdown(colour = "black"),
-        axis.ticks = element_line(colour = "black"),
-        strip.text = element_markdown(colour = "black"),
-        legend.text = element_text(face = "italic")) + 
-  theme(
-  strip.background = element_blank()
-)
+  theme_classic() + facet_wrap(~site, ncol=1)
 
   
 dens_quadra  
@@ -190,6 +177,8 @@ site_ranges <- tibble(
   start_date = as.Date(c("2020-02-09", "2021-05-26")),
   end_date   = as.Date(c("2022-11-28", "2023-11-28")))
 
+prev_data$date <- as.Date(prev_data$date)
+
 prev_data <- prev_data %>% left_join(site_ranges, by = "region")
 
 #custom color palette
@@ -208,22 +197,12 @@ prev_plot_quadra<-ggplot(subset(prev_data, region == 'Quadra'),
             inherit.aes = FALSE) +
   geom_point(size = I(2)) +
   geom_line(size = 0.5) +
-  labs(title = "Quadra Island", 
-       x = 'Year',
+  labs(x = 'Year',
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
-  theme_classic() +
-  theme(plot.title = ggtext::element_markdown(hjust = 0.5),
-        panel.grid.major.y = element_line(linetype = 'dotted'),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        #axis.text.y = element_blank(),
-        #axis.title.y = element_blank(),
-        axis.text = element_markdown(colour = "black"),
-        axis.ticks = element_line(colour = "black"),
-        strip.text = element_markdown(colour = "black")) + 
-  theme(strip.background = element_blank()) +
-  scale_colour_discrete_qualitative(palette = "Cold")
+  theme_classic() + scale_colour_discrete_qualitative(palette = "Cold") + ggtitle("Quadra Island")
+  
 
 prev_plot_quadra
 
@@ -232,30 +211,19 @@ prev_plot_quadra
 prev_plot_calvert<-ggplot(subset(prev_data, region == 'Calvert'),
              aes(x = date, y = prev, colour = site)) +
   geom_rect(data = subset(site_ranges, region == 'Calvert'),
-            aes(xmin = start_date, xmax = end_date),
+            aes(xmin = as.numeric(start_date), xmax = as.numeric(end_date)),
             ymin = -Inf,
             ymax = Inf,
             fill = "lightblue",
             alpha = 0.3,
             inherit.aes = FALSE) +
   geom_point(size = I(2)) +
-  geom_line(size = 0.5) +
-  labs(title = "Calvert Island", 
-       x = 'Year',
+  geom_line(size = 0.7) +
+  labs(x = 'Year',
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
-  theme_classic() +
-   theme(plot.title = ggtext::element_markdown(hjust = 0.5),
-        panel.grid.major.y = element_line(linetype = 'dotted'),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        #axis.text.y = element_blank(),
-        #axis.title.y = element_blank(),
-        axis.text = element_markdown(colour = "black"),
-        axis.ticks = element_line(colour = "black"),
-        strip.text = element_markdown(colour = "black")) + 
-  theme(strip.background = element_blank()) +
-  scale_colour_discrete_qualitative(palette = "Warm")
+  theme_classic() + scale_colour_discrete_qualitative(palette = "Warm") + + ggtitle("Calvert Island")
 
 prev_plot_calvert
 
