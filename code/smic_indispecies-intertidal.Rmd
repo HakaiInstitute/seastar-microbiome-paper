@@ -28,18 +28,17 @@ Your standardized/normalized (whatever your preference for working with composit
 
 ```{R Load and prepare data}
 
-smicpf<-readRDS("decontam_filter_nonegs_prev.rds") #use this dataset because otherwise, indicator species analysis is going to take forever
+smic_indicator <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs_prev.rds")
 
-smicpf<- tax_fix(smicpf, unknowns = c("endosymbionts", "endosymbiont_of", "endosymbionts Genus")) #fix the random endosymbionts in the taxonomy table
 
 #need to rename taxa because otherwise R will add an X to the start of the MD5sum versions of the ASV names
 # get taxa sums and sort
-smicpf_sorted <- smicpf %>% 
+smic_indicator_sorted <- smicpf %>% 
   tax_sort(by = sum)
   
-taxa_names(smicpf_sorted) <- paste0("ASV", seq(ntaxa(smicpf_sorted)))
+taxa_names(smic_indicator_sorted) <- paste0("ASV", seq(ntaxa(smic_indicator_sorted)))
 
-smic_healthyseawater<-smicpf_sorted %>% subset_samples(WastingScore == "0" | Host == "Seawater") #subset to keep only healthy stars and seawater
+smic_healthyseawater<-smic_indicator_sorted %>% subset_samples(WastingScore == "0" | Host == "Seawater") #subset to keep only healthy stars and seawater
 
 #make sure we get everything:
 # sample number summary
@@ -95,7 +94,7 @@ hostgroups <- structure(c(smic_meta$Host), .Names = c(row.names(smic_meta)))
 ```{r Genus level Indicator Species Analysis}
 
 #### run indicator species analysis ####
-host.indval.gen = multipatt(smic_genR, hostgroups, control = how(nperm=999), duleg = TRUE) #set duleg to FALSE if you want to also allow for two-group indicators (e.g. derm + pisaster)
+host.indval.gen = multipatt(smic_genR, hostgroups, control = how(nperm=999), duleg = FALSE) #set duleg to FALSE if you want to also allow for two-group indicators (e.g. derm + pisaster)
 
 summary(host.indval.gen)
 attributes(host.indval.gen)
@@ -111,13 +110,13 @@ isa_tbl_genera<-tibble(rownames_to_column(isa.genera, var = "ASVID")) %>% rename
 
 #how many signficant indicator ASVs are there in your different sample groups (you can change the parameters for signficance)
 sum(isa_tbl_genera$index == 3 & isa_tbl_genera$stat >= 0.7 & isa_tbl_genera$p.value <= 0.001) 
-#[1] 72 = seawater indicators
+#[1] 67 = seawater indicators
 
 sum(isa_tbl_genera$index == 2 & isa_tbl_genera$stat >= 0.7 & isa_tbl_genera$p.value <= 0.001)
-#[1] 11= pisaster indicators
+#[1] 8 = pisaster indicators
 
 sum(isa_tbl_genera$index == 1 & isa_tbl_genera$stat >= 0.7 & isa_tbl_genera$p.value <= 0.001)
-#[1] 6 = derm indicators
+#[1] 4 = derm indicators
 
 #make a new column denoting indicator status
 
@@ -152,6 +151,89 @@ tax_table(smic_isa.genus) <- smic_genera_tax_ind #update taxa table to include I
 
 ```
 
+
+#### RE RUNNING INDICATOR ANALYIS ALLOWING OVERLAPPING INDICATORS AMONG GROUPS ####
+
+```{r}
+#### run indicator species analysis ####
+host.indval.gen.v2 = multipatt(smic_genR, hostgroups, control = how(nperm=999), duleg = FALSE) #set duleg to FALSE if you want to also allow for two-group indicators (e.g. derm + pisaster)
+
+summary(host.indval.gen.v2)
+attributes(host.indval.gen.v2)
+
+isa.genera.v2<-host.indval.gen.v2$sign
+
+write.csv(isa.genera.v2, "SMIC-multipatt_genera_indval_results.csv") #save the results
+
+#### filter data frame for significant indicators ####
+#In order to be included we want to retain only indicators with a p value of 0.005 or less and a stat of 0.7 or higher.
+
+isa_tbl_genera.v2<-tibble(rownames_to_column(isa.genera.v2, var = "ASVID")) %>% rename(c("Seawater" = "s.Seawater", "Dermasterias" = "s.Dermasterias imbricata", "Pisaster" = "s.Pisaster ochraceus")) %>% mutate("ind_group"=index) %>%  mutate(ind_group = replace(ind_group, ind_group == 1, "Dermasterias")) %>% mutate(ind_group = replace(ind_group, ind_group == 2, "Pisaster")) %>% mutate(ind_group = replace(ind_group, ind_group == 3, "Seawater")) %>%
+mutate(ind_group = replace(ind_group, ind_group == 4, "Dermasterias+Pisaster")) %>%
+mutate(ind_group = replace(ind_group, ind_group == 5, "Dermasterias+Seawater")) %>%
+mutate(ind_group = replace(ind_group, ind_group == 6, "Pisaster+Seawater")) %>%  
+mutate(ind_group = replace(ind_group, ind_group == 7, "All"))
+
+#how many signficant indicator ASVs are there in your different sample groups (you can change the parameters for signficance)
+sum(isa_tbl_genera.v2$index == 3 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001) 
+#[1] 67 = seawater indicators
+
+sum(isa_tbl_genera.v2$index == 2 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] 8= pisaster indicators
+
+sum(isa_tbl_genera.v2$index == 1 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] 4 = derm indicators
+
+sum(isa_tbl_genera.v2$index == 4 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] 7 = derm+pis indicators
+
+sum(isa_tbl_genera.v2$index == 5 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] 0 = derm+sw indicators
+
+sum(isa_tbl_genera.v2$index == 6 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] 1 = pis+sw indicators
+
+sum(isa_tbl_genera.v2$index == 7 & isa_tbl_genera.v2$stat >= 0.7 & isa_tbl_genera.v2$p.value <= 0.001)
+#[1] NA = pis+derm+sw indicators. I'm not sure why but the ALL (group 7) indicators do not have p-values.
+
+
+
+#make a new column denoting indicator status
+
+isa_tbl_genera.v2 <- isa_tbl_genera.v2 %>% mutate("isInd" = case_when(
+  stat >= 0.7 & p.value <= 0.001 ~ "Yes",
+  stat < 0.7 | p.value > 0.001 ~ "No"
+  ))
+
+isa_tbl_genera.v2 <-isa_tbl_genera.v2 %>% mutate("Ind_status" = ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Seawater", 'Seawater', ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Pisaster", 'Pisaster', ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Dermasterias", 'Dermasterias', ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Dermasterias+Seawater", 'Dermasterias+Seawater', ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Dermasterias+Pisaster", 'Dermasterias+Pisaster',ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "Pisaster+Seawater", 'Pisaster+Seawater', ifelse(stat >= 0.7 & p.value <= 0.001 & ind_group == "All", 'All', 'No'))))))))
+
+table(isa_tbl_genera.v2$isInd)
+
+isa_tbl_genera.v2 #all the NAs are the index=7 / All
+
+#### merge indicator status with taxonomy table ####
+#now we need to add a column about indicator status to the taxonomy table
+
+Ind_tbl_genera.v2 <- isa_tbl_genera.v2 %>% select(ASVID, Ind_status)
+
+### map back to the full data frame, including diseased stars ###
+
+smic_gen_taxa.v2<-data.frame(tax_table(smic_gen_sorted)) %>% rownames_to_column() %>% dplyr::rename("ASVID" = "rowname") 
+
+smic_genera_tax_ind.v2<-left_join(smic_gen_taxa.v2, Ind_tbl_genera.v2)
+smic_genera_tax_ind.v2
+
+smic_genera_tax_ind.v2<-as.matrix(column_to_rownames(as.data.frame(smic_genera_tax_ind.v2), var = "ASVID"))
+
+#### update taxonomy table in phyloseq object ####
+smic_isa.genus.v2 <- smic_gen_sorted #rename original phyloseq object
+tax_table(smic_isa.genus.v2) <- smic_genera_tax_ind.v2 #update taxa table to include IS
+
+
+```
+
+
+
 Filter and plot the indicator species results. 
 
 I'm including this because it shows how I mapped if any ASV was an indicator back to the phyloseq object, which can be handy for plotting and using packages that leverage the phyloseq data structure (ampVis2, microViz, ...)
@@ -163,17 +245,21 @@ I'm including this because it shows how I mapped if any ASV was an indicator bac
 # smic_isa.genus #indicator genera
 
 
-#now you can filter by indicator and just plot the composition of indicator taxa, etc.
-smic_isa.asvm<- speedyseq::psmelt(smic_isa.asv %>%  
-  transform_sample_counts(function(x) {x/sum(x)} ))
 
-smic_isa.genusm<- speedyseq::psmelt(smic_isa.genus %>%  
+#now you can filter by indicator and just plot the composition of indicator taxa, etc.
+#smic_isa.asvm<- speedyseq::psmelt(smic_isa.asv %>%  
+  #transform_sample_counts(function(x) {x/sum(x)} ))
+
+smic_isa.genusm<- speedyseq::psmelt(smic_isa.genus.v2 %>%  
   transform_sample_counts(function(x) {x/sum(x)} ))
 
 #### quick bubble plot for indicator genera ####
 
 smic_gen.ind_ave <- tibble(smic_isa.genusm) %>% group_by(OTU,Host, Phylum, Class, Order, Family, Genus, Ind_status, Year, YearMonth, Season, SiteType, WastingScore, WastingCategory, DermisType2) %>% summarise(ave_abun = mean(Abundance)) 
 #tidyr:: if unite doesn't work
+
+smic_gen.ind_ave
+write.csv(smic_gen.ind_ave, "SMIC-multipatt_genera_indval_results.csv")
 
 smic_gen.ind_ave <-  smic_gen.ind_ave %>% 
   mutate(Year_Season = paste(Year, Season, sep = "_")) %>% 
@@ -187,22 +273,22 @@ ind_genera_plot_season<-smic_gen.ind_ave  %>%
   filter(Host != "Seawater") %>%
   filter(ave_abun > 0) %>%
   filter(WastingScore == "0") %>%
-  filter(Ind_status %in% c("Dermasterias","Pisaster")) %>%
-ggplot(aes(x = Year_Season, y = GENIND, size = ave_abun, color = Class)) +
+  filter(Ind_status %in% c("Dermasterias+Pisaster", "Dermasterias", "Pisaster")) %>%
+ggplot(aes(x = Season, y = GENIND, size = ave_abun, color = Class)) +
   geom_point(alpha = 0.7) +
-  scale_color_discrete_sequential(palette = "Hawaii") +
+  scale_color_discrete_sequential(palette = "Viridis") +
   scale_size_continuous(range = c(0.5, 5),
                         breaks = c(0.001,0.05,0.1,0.2,0.4,0.6),
                         name = "Mean Abundance") +
-  theme_bw() +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         legend.position = "right") + 
-  facet_grid(Host~SiteType) +
+  facet_grid(Host~Year) +
   ggtitle("Indicator Genera") +
-  xlab("Year_Season") +
-  ylab("Genus-Indicator Group")
+  xlab("Season") +
+  ylab("")
 
-ind_genera_plot
+ind_genera_plot_season
 
 ggsave("SMIC_indicator_genera-bubbleplot_locationxhost-HEALTHY.pdf", last_plot(), width = 10, height =6)
 

@@ -272,10 +272,10 @@ all_three
 
 venn2 <- list(
   Derm = derm_indicators,
-  Pioc = pioc_indicators
-)
+  Pioc = pioc_indicators, 
+  Seawater = seawater_indicators=)
 
-ggVennDiagram(venn2, label = "none") +
+ggVennDiagram(venn2, label = "count") +
   scale_fill_gradient(low = "white", high = "mediumorchid1")
 
 
@@ -283,11 +283,17 @@ derm_indicators <- list("Bdellovibrio", "EC94", "Peredibacter", "Rhodobacteracea
 
 pioc_indicators <- list("Candidatus_Hepatoplasma", "Endozoicomonas", "Gracilibacteria", "Psychroflexus", "Reichenbachiella", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class")
 
+library(datapasta)
+seawater_indicators <- list("AEGEAN-169_marine_group", "Amylibacter", "Ascidiaceihabitans", "BD1-7_clade", "Candidatus_Actinomarina", "Candidatus_Aquiluna", "Candidatus_Nitrosopumilus", "Candidatus_Puniceispirillum", "CL500-3", "Clade_Ia", "Clade_II", "Clade_III", "Clade_IV", "Cryomorphaceae Family", "Defluviicoccales Order", "Ectothiorhodospiraceae Family", "Flavicella", "Fluviicola", "Formosa", "Ga0077536", "HOC36", "IS-44", "KI89A_clade", "Kordiimonadales Order", "Lentimonas", "Luminiphilus", "Magnetospira", "Magnetospiraceae Family", "Marine_Group_II", "Marinifilaceae Family", "Marinimicrobia_(SAR406_clade)", "Marinoscillum", "MB11C04_marine_group", "Nitrincolaceae Family", "Nitrosomonas", "Nitrosopumilaceae Family", "NS10_marine_group", "NS11-12_marine_group", "NS2b_marine_group", "NS3a_marine_group", "NS4_marine_group", "NS5_marine_group", "NS7_marine_group", "NS9_marine_group", "OCS116_clade", "OM182_clade", "OM43_clade", "OM60(NOR5)_clade", "OM75_clade", "Pelagicoccus", "Pirellulaceae Family", "Planktomarina", "Porticoccus", "PS1_clade", "Pseudohongiella", "Puniceispirillales Order", "RS62_marine_group", "SAR116_clade", "SAR324_clade(Marine_group_B)", "SAR86_clade", "SAR92_clade", "SCGC_AAA164-E04", "Spongiibacteraceae Family", "Stappiaceae", "SUP05_cluster", "Synechococcus_CC9902", "Thiotrichaceae Family")
+
 seawater_indicators
 
 derm_core <-list("EC94", "Flavobacteriaceae Family", "Saprospiraceae Family", "Rhodobacteraceae Family", "Rubritalea")
 
 pioc_core <- list("Endozoicomonas", "Flavobacteriaceae Family", "Polaribacter", "Reichenbachiella", "Rhodobacteraceae Family", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class", "Roseibacillus", "Rubritalea", "Saprospiraceae Family","Yoonia-Loktanella")
+
+
+
 
 
 pisaster_indicator <- as.character(unlist(pioc_indicators))
