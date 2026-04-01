@@ -72,7 +72,8 @@ pis_iris<-ord_plot_iris(
   tax_order = top_classes,
   palette = top_class_pal
 ) +
-  scale_color_manual(values = c("orange","mediumturquoise"))
+  scale_color_manual(values = c("orange","mediumturquoise")) +
+  ggtitle("P. ochraceus") + theme(plot.title = element_text(size = 10, face = "italic"))
 
 pis_iris
 
@@ -98,18 +99,19 @@ derm_iris<-ord_plot_iris(
   anno_colour = "SiteType",
   palette = top_class_pal
 ) +
-  scale_color_manual(values = c("orange","mediumturquoise"))
+  scale_color_manual(values = c("orange","mediumturquoise")) +
+  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
 
 derm_iris
 
 # ggsave(filename = "DERMASTERIAS-iris-plot-class_spectral.pdf",derm_iris, dpi = 300, width = 8, height = 6)
 
 #### make iris panel ####
-iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 1, common.legend = TRUE, legend = "right", labels = c("a. P. ochraceus","b. D. imbricata"), font.label = list(face ="plain",size = 10), hjust = -0.25)
+iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 2, common.legend = TRUE, legend = "right")
 
 iris_grid
 
-ggsave("iris_grid_nmds.jpeg", iris_grid, height = 8, width = 6)
+ggsave("iris_grid_nmds.jpeg", iris_grid, height = 8, width = 8, dpi=300)
 ```
 
 ```{R Healthy Stars and Seawater Class Iris Plot}
