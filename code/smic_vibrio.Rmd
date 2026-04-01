@@ -40,7 +40,9 @@ ps_vibrio <- subset_taxa(seastars_ps_glom, Species == "Vibrio_pectenicida")
 #Melt to long format
 seastars_vibrio <- psmelt(ps_vibrio)
 
-seastars_vibrio
+seastars_vibrio$Season <- factor(
+  seastars_vibrio$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
 
 #make a plot with all the data, non-transformed 
 stars_vibrio_plot<-ggplot(seastars_vibrio, aes(x = Host, 
@@ -69,17 +71,35 @@ seastars_vibrio_filtered <- seastars_vibrio %>%
 seastars_vibrio_sqrt <- seastars_vibrio %>%
   mutate(Abundance = sqrt(Abundance))
 
-seastars_vibrio_sqrt$Abundance
+seastars_vibrio_sqrt$Season <- factor(
+  seastars_vibrio_sqrt$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+seastars_vibrio_sqrt$Month <- factor(
+  seastars_vibrio_sqrt$Month,
+  levels = c("1", "2", "5", "6", "7", "8", "9", "11", "12"))
 
 #plot the transformed and data with zeroes removed
-stars_vibrio_plot2<-ggplot(seastars_vibrio_sqrt, aes(x = Host, y = Abundance, color = Host)) +
+stars_vibrio_plot2<-ggplot(seastars_vibrio_sqrt, aes(x = Month, y = Abundance, color = Season)) +
   #geom_boxplot() +
-  geom_jitter(width = 0.2, alpha = 0.7) +
+  geom_jitter(aes(shape = SiteType), width = 0.3, alpha = 0.7) +
   theme_classic() +
-  scale_color_manual(values = c("#AD002AFF", "#925E9FFF", "#0099B4FF")) + 
-  ylab("sqrt(Rel. Abun.)")
+ scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_shape_manual(values = c(8, 15), name = "Region")+
+  ylab("sqrt(Rel. Abun.)") +
+  facet_wrap(~Host) +
+  theme(strip.background = element_blank()) 
+  #guides(color = "none") 
 
 stars_vibrio_plot2
+
+
+# Named vector: "original_value" = "New Name"
+sample_labels <- c("D. imbricata" = "P. ochraceus", "Seawater")
+
+ggplot(mtcars, aes(mpg, wt)) +
+  geom_point() +
+  facet_wrap(~cyl, labeller = as_labeller(new_labels))
 
 
 #log transformation
@@ -95,7 +115,8 @@ stars_vibrio_plot3<-ggplot(seastars_vibrio_log, aes(x = Host, y = Abundance, col
   geom_jitter(width = 0.2, alpha = 0.7) +
   theme_classic() +
   scale_color_manual(values = c("#AD002AFF", "#925E9FFF", "#0099B4FF")) + 
-  ylab("log(Vpec Relative Abundance)")
+  ylab("log(Vpec Relative Abundance)") +
+  facet_wrap(~Season)
 
 stars_vibrio_plot3
 
@@ -104,9 +125,16 @@ stars_vibrio_plot3
 
 ```{r}
 #now only within pisaster, wasting levels
+#remove zero values and try transforming the relative abundance
+
+pisaster_vibrio_sqrt <- seastars_vibrio_sqrt %>%
+  filter(Host %in% c("Pisaster ochraceus"))
+
+pisaster_vibrio_sqrt
+
 
 #plot Vibrio across wasting categories
-pis_vibrio_plot<-ggplot(pisaster_vibrio, aes(x = WastingCategory, 
+pis_vibrio_plot<-ggplot(pisaster_vibrio_sqrt, aes(x = WastingCategory, 
                y = Abundance, 
                color = WastingCategory)) +
   #geom_boxplot() + 
@@ -123,12 +151,6 @@ pis_vibrio_plot<-ggplot(pisaster_vibrio, aes(x = WastingCategory,
 
 pis_vibrio_plot
 
-#now remove zero values and try transforming the relative abundance
-
-pisaster_vibrio_sqrt <- seastars_vibrio_sqrt %>%
-  filter(Host %in% c("Pisaster ochraceus"))
-
-pisaster_vibrio_sqrt
 
 #plot
 pisaster_vibrio_plot2<- ggplot(pisaster_vibrio_sqrt, aes(x = WastingCategory, y = Abundance, color = WastingCategory)) +
@@ -144,17 +166,28 @@ pisaster_vibrio_plot2
 
 #plot with tissue type this time
 
-pisaster_vibrio_sqrt
+pisaster_vibrio_sqrt$Season <- factor(
+  pisaster_vibrio_sqrt$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+pisaster_vibrio_sqrt$Month <- factor(
+  pisaster_vibrio_sqrt$Month,
+  levels = c("1", "2", "5", "6", "7", "8", "9", "11", "12"))
+
 
 pisaster_vibrio_sqrt$DermisType2 <- factor(pisaster_vibrio_sqrt$DermisType2, levels = c("H_healthy", "H_diseased", "L_diseased"))
 
-pisaster_vibrio_plot3<- ggplot(pisaster_vibrio_sqrt, aes(x = DermisType2, y = Abundance, color = WastingCategory)) +
+pisaster_vibrio_plot3<- ggplot(pisaster_vibrio_sqrt, aes(x = Month, y = Abundance, color = Season)) +
   #geom_boxplot() +
-  geom_jitter(width = 0.2, alpha = 0.7) +
+  geom_jitter(aes(shape = SiteType), width = 0.3, alpha = 0.7) +
   theme_classic() +
-  scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4")) + 
-  ylab("sqrt(Rel. Abun.)") + xlab("Tissue Type") +
-  scale_x_discrete(labels = c("AsympH", "WastingNL", "WastingL"))
+  scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) + 
+  ylab("sqrt(Rel. Abun.)") + #xlab("Tissue Type") +
+  scale_shape_manual(values = c(8, 15), name = "Region") +
+  facet_wrap(~DermisType2) +
+  theme(strip.background = element_blank()) + 
+  ggtitle("P. ochraceus") + theme(plot.title = element_text(size = 10, face = "italic"))
+  
 
 pisaster_vibrio_plot3
 
@@ -165,11 +198,11 @@ combining the two panels
 
 ```{r}
 
-vibrio_panel<-ggarrange(stars_vibrio_plot2, pisaster_vibrio_plot3, ncol=1, align = "v", labels = c("a", "b"))
+vibrio_panel<-ggarrange(stars_vibrio_plot2, pisaster_vibrio_plot3, ncol=1, align = "v", labels = c("A", "B"), common.legend = TRUE, legend = "right")
 
 vibrio_panel
 
-ggsave("vibrio_panel.pdf", dpi=300, width=10, height=8, units="in")
+ggsave("vibrio_panel.pdf", dpi=300, width=10, height=7, units="in")
 
 
 ```
