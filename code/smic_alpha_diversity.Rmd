@@ -9,7 +9,7 @@ First read in the phyloseq object that we need
 ```{r }
 
 #read in the required QC'ed phyloseq object
-decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs.rds")
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs.rds")
 
 ```
 
@@ -149,19 +149,21 @@ seawater_seasonal<-richness_seawater %>%
                names_to = "metric",
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
-  geom_boxplot(alpha = 0.3) +
- geom_jitter(alpha=0.3, height = 0, width = .2) +
+  geom_boxplot(alpha = 0.4, outlier.shape = NA) +
+ geom_jitter(aes(shape = Region), alpha=0.3, height = 0, width = .2) +
   labs(x = NULL, y = "Inv. Simpson") +
-  #scale_color_manual(values = c("darkslateblue", "springgreen3", "darkgoldenrod2", "darkorange"), name = "Season") +
-  #scale_color_brewer(palette="Set1") +
+  scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
   scale_shape_manual(values = c(8, 15)) +
   theme_classic() + 
   #theme(axis.text.x = element_blank()) +
-  facet_grid(Region~Year, axes = "all_x") +
+  facet_wrap(~Year, ncol=4) +
   scale_y_continuous(limits = c(0, 200)) +
-  guides(color = "none") +
+  guides(color = "none", fill = "none") +
   ggtitle("Seawater") + theme(plot.title = element_text(size = 10)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+   theme(strip.background = element_blank() # This removes the box and background
+  )
 
 
 seawater_seasonal
@@ -231,21 +233,20 @@ derm_seasonal<- richness_derm %>%
                names_to = "metric",
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
-  geom_boxplot(alpha=0.3) +
- geom_jitter(height = 0, width = .2, alpha = 0.3) +
+  geom_boxplot(alpha=0.4, outlier.shape = NA) +
+ geom_jitter(aes(shape = Region), height = 0, width = .2, alpha = 0.3) +
   labs(x = NULL, y = "Inv. Simpson") +
-  #facet_grid(Region~Year, scales = "free") +
-  #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
-  #scale_color_brewer(palette="Set1") +
- # scale_shape_manual(values = c(8, 15)) +
+    scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
-  theme(legend.position="right") +
+  facet_wrap(~Year, ncol=4) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
-  facet_grid(Region~Year, axes = "all_x") + #theme(axis.text.x = element_blank()) +
-  scale_y_continuous(limits = c(0, 200)) +
-  guides(color = "none") +
+  guides(color = "none", fill = "none") +
   ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+   theme(strip.background = element_blank() # This removes the box and background
+  )
   
 derm_seasonal
 
@@ -314,19 +315,21 @@ pis_seasonal<- richness_pis %>%
                names_to = "metric",
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
-  geom_boxplot(alpha=0.3) +
- geom_jitter(alpha=0.3, height = 0, width = .2) +
+  geom_boxplot(alpha=0.4, outlier.shape = NA) +
+ geom_jitter(aes(shape = Region), height = 0, width = .2, alpha = 0.3) +
   labs(x = NULL, y = "Inv. Simpson") +
-  #facet_grid(Region~Year, scales = "free") +
-  #scale_color_manual(values = c("darkslateblue", "lightseagreen", "darkgoldenrod2", "coral2"), name = "Season") +
-  #scale_color_brewer(palette="Set1") +
+    scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
-  theme(legend.position="right") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) + 
-  facet_grid(Region~Year, axes = "all_x") +
-  scale_y_continuous(limits = c(0, 200)) +
-  guides(color = "none") +
-  ggtitle("P. ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
+  facet_wrap(~Year, ncol=4) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  guides(color = "none", fill = "none") +
+  ggtitle("P. ochraceus") + theme(plot.title = element_text(size = 10, face = "italic")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(strip.background = element_blank() # This removes the box and background
+  )
+ 
 
 pis_seasonal  
 derm_seasonal
