@@ -117,7 +117,7 @@ wastingcategory_boxplot <- ggboxplot(
     aes(group = WastingCategory),
     tip.length = 0.01,
     method = "wilcox_test",
-    ref.group = "Healthy",
+   # ref.group = "Healthy", #ref.group = "Healthy" -- by setting a ref.group that will only calculate and plot stats for in reference to that group (rather than also including severe vs mid); remove ref.group if you want to know about those too.
     p.adjust.method = "BH",
     p.adjust.by = "group",
     label = "p.adj.signif",         # or "p.adj" for numeric values
@@ -154,7 +154,6 @@ ggsave("SMIC-wastingcategory_boxplot.pdf",wastingcategory_boxplot, height = 6, w
 
 
 #### calculate log fold change ####
-
 
 SMIC_siggenera_WC_log2FC<-pis_genm %>% group_by(Genus, WastingCategory) %>% summarise(MeanAbun = mean(Abundance)) %>% tidyr::pivot_wider(id_cols = Genus, values_from = MeanAbun, names_from = WastingCategory) %>% mutate(log2FC_HM = log2(Mild/Healthy), log2FC_HS = log2(Severe/Healthy), log2FC_MS = log2(Severe/Mild)) %>% filter(Genus %in% sig_genera)
 
@@ -279,7 +278,7 @@ SMIC_siggenera_WC_log2FC_sig$abun_comp <- factor(SMIC_siggenera_WC_log2FC_sig$ab
 logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
   mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
   ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
-  geom_col(position = "dodge", width = 0.7) +
+  geom_col(position = "dodge", width = 0.8) +
   # stars at end of each bar
   geom_text(
     aes(label = sig_label,
@@ -292,14 +291,17 @@ logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
     color = "grey20",
     size = 3.5
   ) +
-  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Comparison", 
-                    labels = c("Mild : Healthy", "Severe : Mild", "Severe : Healthy")) +
+  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category", 
+                    labels = c("Mild:Healthy", "Severe:Mild", "Severe:Healthy")) +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_bw() +
+  theme_classic() +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 
   theme(strip.background = element_blank())  + 
-  ggtitle("Wasting Category Comparison")
+  theme(legend.text = element_text(size = 8)) +
+  theme(axis.text.y = element_text(size = 8)) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(plot.title = element_text(size = 10))
 
 logchange_category
 
@@ -354,7 +356,7 @@ tissuetype_boxplot <- ggboxplot(
     aes(group = DermisType2),
     tip.length = 0.01,
     method = "wilcox_test",
-    ref.group = "H_healthy",
+    #ref.group = "H_healthy",
     p.adjust.method = "BH",
     p.adjust.by = "group",
     label = "p.adj.signif",         # or "p.adj" for numeric values
@@ -366,7 +368,8 @@ tissuetype_boxplot <- ggboxplot(
   ) +
   scale_fill_manual(
     values = c("olivedrab", "deepskyblue", "deepskyblue4"),
-    labels = c("AsympH", "WastingNL", "WastingL")) +
+    labels = c("AsympH", "WastingNL", "WastingL"), 
+    name = "Tissue Type") +
   scale_y_sqrt() +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1),    
   facet_wrap(Genus ~., nrow = 4,) +
@@ -381,7 +384,7 @@ tissuetype_boxplot <- ggboxplot(
     strip.background = element_blank(),
     panel.grid.minor = element_blank()
   ) +
-  ylab("Relative Abundance")
+  ylab("Relative Abundance") 
 
 tissuetype_boxplot
 
@@ -413,36 +416,7 @@ SMIC_siggenera_TT_log2FC.long<-SMIC_siggenera_TT_log2FC %>% pivot_longer(
 
 SMIC_siggenera_TT_log2FC.long
 
-#### log2FC paired barplot ####
-
-SMIC_tissuetype_log2FC.bar<-SMIC_siggenera_TT_log2FC.long %>%
-ggplot(aes(x = Log2FC, y = reorder(Genus,Log2FC), fill = abun_comp)) +
-  geom_col(position = "dodge") +
-  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Comparison")+
-  geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_bw() + 
-  ylab(NULL) +
-  xlab ("Log2 Fold Change") +
-  coord_flip() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
-   ggtitle("Differential abundance by Tissue Type")
-
-SMIC_tissuetype_log2FC.bar
-
 ```
-
-#if we want to combine both log change plots
-
-```{r}
-
-logchange_1<-ggarrange(SMIC_severehealthy_log2FC.bar, SMIC_tissuetype_log2FC.bar, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
-
-logchange_1
-
-ggsave("logchange_panel.pdf", dpi=300, width=10, height=8, units="in")
-
-```
-
 
 
 
@@ -494,7 +468,7 @@ SMIC_siggenera_TT_log2FC_sig %>%
 logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
   mutate(sig_label = recode(p.adj.signif, 'ns' = "")) %>%   # or your s
   ggplot(aes(x = Log2FC, y = reorder(Genus, Log2FC), fill = abun_comp)) +
-  geom_col(position = "dodge", width = 0.7) +
+  geom_col(position = "dodge", width = 0.8) +
   # stars at end of each bar
   geom_text(
     aes(label = sig_label,
@@ -507,13 +481,16 @@ logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
     color = "grey20",
     size = 3.5
   ) +
-  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Comparison", 
-                     labels = c("WastingNL : AsympH", "WastingL:  WastingNL", "WastingL : AsympH")) +
+  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type", 
+                     labels = c("WastingNL:AsympH", "WastingL:WastingNL", "WastingL:AsympH")) +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
-  theme_bw() +
+  theme_classic() +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 
-  ggtitle("Tissue Type Comparison")
+  theme(legend.text = element_text(size = 8)) +
+  theme(axis.text.y = element_text(size = 8)) +
+  theme(axis.title.x = element_text(size = 8)) +
+  theme(plot.title = element_text(size = 10))
 
 logchange_tissue
 
@@ -524,11 +501,11 @@ logchange_tissue
 
 ```{r}
 
-logchange_panel<-ggarrange(logchange_category, logchange_tissue, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
+logchange_panel<-ggarrange(logchange_category, logchange_tissue, ncol=1, align = "v", legend = "right", labels = c("A", "B"))
 
 logchange_panel
 
-ggsave("logchange_panel.pdf", dpi=300, width=10, height=8, units="in")
+ggsave("logchange_panel.jpeg", dpi=300, width=8, height=10, units="in")
 
 ```
 
