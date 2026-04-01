@@ -52,19 +52,25 @@ healthy_host_nmds <- ordinate(healthy_all_b_trans, method = "NMDS", distance = "
 nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samples",
   color = "Host", shape="SiteType") +
   theme_classic() +
-   scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF")) + 
+   scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), 
+   labels = c(expression(italic("D. imbricata")),
+   expression(italic("P. ochraceus")),"Seawater")) + 
   scale_shape_manual(values = c(8, 15)) +
-  theme(legend.position="right") +
-  theme(strip.background = element_blank())
+  theme(
+    legend.position = "right",
+    strip.background = element_blank()) + 
+  labs(color = "Sample Type", shape = "Region")
+
 
 nmds_host
 
 alpha_host_boxplot
 
-fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, heights = c(1, 1.7), common.legend = TRUE)
+fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
+
 fig2
 
-ggsave("fig2.pdf", dpi=300, width=10, height=8, units="in")
+ggsave("fig2.jpeg", dpi=300, width=9, height=8, units="in")
 ```
 
 
@@ -125,7 +131,7 @@ seawater_region_ord<-plot_ordination(
   physeq = seawater_norm,
   ordination = seawater.nmds,
   color = "SiteType", shape = "Season") +
-  scale_color_manual(values = c("violet","#1c9099")) + 
+  scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
    ggtitle("Seawater")
 
@@ -166,7 +172,7 @@ derm_region_ord<-plot_ordination(
   physeq = derm_norm,
   ordination = derm.nmds,
   color = "SiteType") +
-  scale_color_manual(values = c("violet","#1c9099")) + 
+  scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
    ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
 
@@ -207,7 +213,7 @@ pis_region_ord<-plot_ordination(
   physeq = pis_norm,
   ordination = pis.nmds,
   color = "SiteType") +
-  scale_color_manual(values = c("violet","#1c9099")) + 
+  scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
    ggtitle("P. ochraceus") +theme(plot.title = element_text(size = 10, face = "italic"))
 
@@ -414,9 +420,9 @@ diseased_pisaster_nmds <- ordinate(pisaster_all_norm, method = "NMDS", distance 
 nmds_pisaster_diseasestat <-plot_ordination(
 physeq = pisaster_all_norm,
   ordination = diseased_pisaster_nmds,
-  color = "Disease_Status_Star") +
+  color = "WastingCategory") +
  scale_color_manual(values = c("turquoise2", "maroon")) + 
-  #facet_grid(Month~Site) +
+  facet_grid(~SiteType) +
   theme_classic()
 
 nmds_pisaster_diseasestat
@@ -428,8 +434,8 @@ nmds_pisaster_wastingcat <-plot_ordination(
   ordination = diseased_pisaster_nmds,
   color = "WastingCategory") +
  theme_classic() +
-  scale_color_manual(values = c("lightgreen","mediumorchid", "mediumorchid4")) +
-  facet_grid(Month~Site, axes = "all_x")
+  scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"))
+  #facet_grid(Month~Site, axes = "all_x")
 
 nmds_pisaster_wastingcat
 
@@ -442,8 +448,8 @@ nmds_pisaster_swabtype <-plot_ordination(
   physeq = pisaster_all_norm,
   ordination = diseased_pisaster_nmds,
   color = "DermisType2") +
- scale_color_manual(values = c("#26547c", "lightgreen", "#ef476f")) + 
-  facet_wrap(~SiteType) +
+ scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4")) + 
+  #facet_wrap(~SiteType) +
    theme_classic() +
   theme(
     strip.background = element_blank() # Removes grey fil   # Removes border

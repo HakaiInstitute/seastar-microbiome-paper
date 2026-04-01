@@ -55,17 +55,17 @@ alpha_host_boxplot<-richness_host %>%
   pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = Host, y = value, color = Host)) +
-  geom_boxplot(outlier.colour = NA) +
- geom_jitter(alpha=0.3, height = 0, width = .2)+
+  ggplot(aes(x = Host, y = value, color = Host, fill = Host)) +
+  geom_boxplot(alpha = 0.4, outlier.shape = NA, outlier.colour = NA) +
+ geom_jitter(aes(shape = Region), alpha=0.5, height = 0, width = .2) +
  #geom_jitter(aes(shape = Region), height = 0, width = .4) +
-  labs(x = NULL, y = "Diversity (Inv. Simpson)") +
-  facet_wrap(~Region, scales = "free") +
-  scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Host Type") +
+  labs(x = NULL, y = "Inv. Simpson", color = "Sample Type", shape = "Region") +
+  #facet_wrap(~Region, scales = "free") +
+  scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type") +
+  scale_fill_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type") +
   scale_shape_manual(values = c(8, 15)) +
-  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
   theme_classic() +
-  theme(legend.position="right") + guides(color = "none") +
+  theme(legend.position="right") + guides(fill = "none", shape = "none", color ="none") +
    theme(axis.text.x = element_blank()) 
   #theme(strip.background = element_blank())
 
