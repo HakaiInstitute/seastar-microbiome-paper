@@ -85,19 +85,20 @@ dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
             alpha = 0.3,
             inherit.aes = FALSE) +
   geom_point(size = 2) +
-  geom_line(linewidth = 0.5) +
-  labs(title = "Calvert Island",
+  geom_line(linewidth = 0.6) +
+  labs(title = "Calvert",
        x = 'Year',
        y = bquote(Density~(ind/m^2)),
        colour = 'Species') +
   scale_colour_manual(values = c(
     "P. ochraceus" = "#925E9FFF",
-    "D. imbricata" = "#AD002AFF")) +
+    "D. imbricata" = "#AD002AFF"), labels = c(expression(italic("D. imbricata")),
+   expression(italic("P. ochraceus")),"Seawater")) +
   scale_y_continuous(limits = c(0, 4.2),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
   scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
-  theme_classic() + facet_wrap(~site, ncol=1) 
+  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
 
   #theme(plot.title = ggtext::element_markdown(hjust = 0.5),
         #panel.grid.major.y = element_line(linetype = 'dotted'),
@@ -124,32 +125,33 @@ dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
             alpha = 0.3,
             inherit.aes = FALSE) +
   geom_point(size = 2) +
-  geom_line(linewidth = 0.5) +
-  labs(title = "Quadra Island",
+  geom_line(linewidth = 0.6) +
+  labs(title = "Quadra",
        x = 'Year',
        y = bquote(Density~(ind/m^2)),
        colour = 'Species') +
   scale_colour_manual(values = c(
     "P. ochraceus" = "#925E9FFF",
-    "D. imbricata" = "#AD002AFF")) +
+    "D. imbricata" = "#AD002AFF"), labels = c(expression(italic("D. imbricata")),
+   expression(italic("P. ochraceus")),"Seawater")) +
   scale_y_continuous(limits = c(0, 4.2),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
   scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
-  theme_classic() + facet_wrap(~site, ncol=1)
+  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
 
   
 dens_quadra  
 
 #combine both density plots
 dens_combined<-ggarrange(dens_calvert, dens_quadra,
-          labels = c("a", "b"),
+          labels = c("A", "B"),
           ncol = 2, nrow = 1,
           common.legend = TRUE, legend="bottom")
 
 dens_combined
 
-ggsave("dens_combined.pdf", dpi=300, width=10, height=8, units="in")
+ggsave(plot = dens_combined, filename = "dens_combined.jpeg", dpi=300, width=10, height=8, units="in")
 
 
 ```
@@ -197,11 +199,13 @@ prev_plot_quadra<-ggplot(subset(prev_data, region == 'Quadra'),
             inherit.aes = FALSE) +
   geom_point(size = I(2)) +
   geom_line(size = 0.5) +
+  facet_wrap(~site, ncol=1, axes = "all_x") +
   labs(x = 'Year',
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
-  theme_classic() + scale_colour_discrete_qualitative(palette = "Cold") + ggtitle("Quadra Island")
+  theme_classic() + scale_colour_discrete_qualitative(palette = "Cold") + ggtitle("Quadra") +
+  theme(strip.background = element_blank())
   
 
 prev_plot_quadra
@@ -218,23 +222,25 @@ prev_plot_calvert<-ggplot(subset(prev_data, region == 'Calvert'),
             alpha = 0.3,
             inherit.aes = FALSE) +
   geom_point(size = I(2)) +
-  geom_line(size = 0.7) +
+  geom_line(size = 0.5) +
+  facet_wrap(~site, ncol=1, axes = "all_x") +
   labs(x = 'Year',
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
-  theme_classic() + scale_colour_discrete_qualitative(palette = "Warm") + + ggtitle("Calvert Island")
+  theme_classic() + scale_colour_discrete_qualitative(palette = "Warm") +  ggtitle("Calvert") +
+  theme(strip.background = element_blank())
 
 prev_plot_calvert
 
 prev_combined<-ggarrange(prev_plot_calvert, prev_plot_quadra,
-          labels = c("a", "b"),
-          ncol = 1, nrow = 2,
-          common.legend = FALSE, legend="right")
+          labels = c("A", "B"),
+          ncol = 2, nrow = 1,
+          common.legend = FALSE, legend="none")
 
 prev_combined
 
-ggsave("prev_combined.pdf", dpi=300, width=10, height=8, units="in")
+ggsave("prev_combined.jpeg", dpi=300, width=10, height=8, units="in")
 
 ```
 

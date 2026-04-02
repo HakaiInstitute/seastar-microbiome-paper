@@ -66,7 +66,7 @@ nmds_host
 
 alpha_host_boxplot
 
-fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("a", "b"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
+fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("A", "B"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
 
 fig2
 
@@ -427,17 +427,27 @@ physeq = pisaster_all_norm,
 
 nmds_pisaster_diseasestat
 
-#plotting Pisaster across wasting categories
+#plotting Pisaster across wasting categories by season and region
+
+season_order <- c("Winter", "Spring", "Summer", "Fall")
+
+sample_data(pisaster_all_norm)$Season <- factor(sample_data(pisaster_all_norm)$Season, levels = season_order)
+
 
 nmds_pisaster_wastingcat <-plot_ordination(
   physeq = pisaster_all_norm,
   ordination = diseased_pisaster_nmds,
-  color = "WastingCategory") +
+  color = "WastingCategory", 
+  shape = "WastingScore") +
  theme_classic() +
-  scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"))
-  #facet_grid(Month~Site, axes = "all_x")
+  scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category") +
+  scale_shape_manual(values=c(15, 16, 17, 4, 8)) +
+  facet_grid(SiteType~Season, axes = "all_x") +
+  theme(strip.background = element_blank())
 
 nmds_pisaster_wastingcat
+
+ggsave(plot =nmds_pisaster_wastingcat, filename ="nmds_wastingcat.jpeg", dpi=300, width=7, height=5, units="in")
 
 
 # Plot of Pisaster based on swab type 

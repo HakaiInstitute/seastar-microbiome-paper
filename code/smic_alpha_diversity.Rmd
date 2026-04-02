@@ -50,24 +50,32 @@ richness_host$Host<-factor(richness_host$Host)
 richness_host$Region<-factor(richness_host$Region)
 richness_host$Site<-factor(richness_host$Region)
 
+#Customize facet labels
+host_labels <- c(
+  "Dermasterias imbricata" = "italic('D. imbricata')",
+  "Pisaster ochraceus"     = "italic('P. ochraceus')",
+  "Seawater"               = "'Seawater'")
+
+
 #boxplot
 alpha_host_boxplot<-richness_host %>%
   pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = Host, y = value, color = Host, fill = Host)) +
+  ggplot(aes(x = Region, y = value, color = Host, fill = Host)) +
   geom_boxplot(alpha = 0.4, outlier.shape = NA, outlier.colour = NA) +
- geom_jitter(aes(shape = Region), alpha=0.5, height = 0, width = .2) +
+ geom_jitter(alpha=0.5, height = 0, width = .3) +
  #geom_jitter(aes(shape = Region), height = 0, width = .4) +
-  labs(x = NULL, y = "Inv. Simpson", color = "Sample Type", shape = "Region") +
+  labs(x = NULL, y = "Inv. Simpson", color = "Sample Type") +
   #facet_wrap(~Region, scales = "free") +
-  scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type") +
-  scale_fill_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type") +
-  scale_shape_manual(values = c(8, 15)) +
+  scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type", 
+                     labels = c(expression(italic("D. imbricata")), expression(italic("P. ochraceus")),"Seawater")) +
+  scale_fill_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), name = "Sample Type", labels = c(expression(italic("D. imbricata")), expression(italic("P. ochraceus")),"Seawater")) +
+  #scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
+  facet_wrap(~Host, labeller = as_labeller(host_labels, label_parsed)) +
   theme(legend.position="right") + guides(fill = "none", shape = "none", color ="none") +
-   theme(axis.text.x = element_blank()) 
-  #theme(strip.background = element_blank())
+  theme(strip.background = element_blank())
 
   
  alpha_host_boxplot     #boxplot version
@@ -338,11 +346,11 @@ seawater_seasonal
 #combining all 3 hosts for alpha diversity
   library(ggpubr)
 
-season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("a", "b", "c"))
+season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("A", "B", "C"))
 
 season_panel
 
-ggsave("season_panel.pdf", dpi=300, width=10, height=8, units="in")
+ggsave("season_panel.jpeg", dpi=300, width=9, height=8, units="in")
 ```
 
 

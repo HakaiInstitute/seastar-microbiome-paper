@@ -308,6 +308,7 @@ logchange_category
 ```
 
 
+
 #### RUNNING THE SAME ANALYIS BUT WITH TISSUE TYPE INSTEAD OF WASTING CATEGORY   ####
 
 ```{r}
@@ -387,7 +388,6 @@ tissuetype_boxplot <- ggboxplot(
   ylab("Relative Abundance") 
 
 tissuetype_boxplot
-
 
 ```
 
