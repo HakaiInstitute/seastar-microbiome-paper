@@ -291,21 +291,71 @@ logchange_category<-SMIC_siggenera_WC_log2FC_sig %>%
     color = "grey20",
     size = 3.5
   ) +
-  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category", 
+  scale_fill_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Comparison", 
                     labels = c("Mild:Healthy", "Severe:Mild", "Severe:Healthy")) +
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
   theme_classic() +
   ylab(NULL) +
   xlab("Log2 Fold Change") + 
-  theme(strip.background = element_blank())  + 
-  theme(legend.text = element_text(size = 8)) +
-  theme(axis.text.y = element_text(size = 8)) +
-  theme(axis.title.x = element_text(size = 8)) +
-  theme(plot.title = element_text(size = 10))
+  theme(strip.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 12))
 
 logchange_category
 
 ```
+
+Combining logchange plot, NMDS and top taxa barplot for Figure 5. Note that you will need to run smic_beta_diversity script for the 'nmds_pisaster_wastingcat' plot and the smic_taxa_barplots script for the 'wastingscore_region' plot
+
+```{r}
+#3 plots to be combined
+logchange_category
+nmds_pisaster_wastingcat
+wastingscore_region
+
+#want the logfold change plot to be larger along the left side and the other two stacked on the right
+
+# 1. Create the sub-grid for the second column (2 plots stacked vertically)
+col2 <- ggarrange(nmds_pisaster_wastingcat, wastingscore_region, nrow = 2, labels = c("B", "C"), 
+                  heights = c(1.1, 1))
+
+
+# 2. Combine the first plot with the new sub-grid (1 plot in col 1, sub-grid in col 2)
+wasting_panel_fig5<-ggarrange(logchange_category, col2, ncol = 2, labels = "A")
+
+wasting_panel_fig5
+
+ggsave(plot =wasting_panel_fig5, filename ="wasting_panel_fig5.jpeg", 
+       dpi=300, width=12, height=6, units="in")
+
+```
+
+Combining the same 3 plots but for tissue type (supplemental)
+
+```{r}
+#3 plots to be combined
+logchange_tissue
+nmds_pisaster_swabtype
+tissuetype_region
+
+#want the logfold change plot to be larger along the left side and the other two stacked on the right
+
+# 1. Create the sub-grid for the second column (2 plots stacked vertically)
+col2_supp <- ggarrange(nmds_pisaster_swabtype, tissuetype_region, nrow = 2, labels = c("B", "C"), 
+                  heights = c(1.1, 1))
+
+
+# 2. Combine the first plot with the new sub-grid (1 plot in col 1, sub-grid in col 2)
+wasting_panel_supp<-ggarrange(logchange_tissue, col2_supp, ncol = 2, labels = "A")
+
+wasting_panel_supp
+
+ggsave(plot =wasting_panel_supp, filename ="wasting_panel_supp.jpeg", 
+       dpi=300, width=12, height=6, units="in")
+
+```
+
+
+
 
 
 
@@ -486,11 +536,8 @@ logchange_tissue<-SMIC_siggenera_TT_log2FC_sig %>%
   geom_vline(xintercept = 0, linewidth = 0.5, color = "black") +
   theme_classic() +
   ylab(NULL) +
-  xlab("Log2 Fold Change") + 
-  theme(legend.text = element_text(size = 8)) +
-  theme(axis.text.y = element_text(size = 8)) +
-  theme(axis.title.x = element_text(size = 8)) +
-  theme(plot.title = element_text(size = 10))
+  xlab("Log2 Fold Change") +
+  theme(axis.text.y = element_text(size = 12))
 
 logchange_tissue
 

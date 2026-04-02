@@ -64,6 +64,14 @@ nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samp
 
 nmds_host
 
+
+```
+
+Combining alpha and diversity plots by sample type to create Figure 2
+
+```{r}
+
+
 alpha_host_boxplot
 
 fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("A", "B"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
@@ -71,7 +79,9 @@ fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("A",
 fig2
 
 ggsave("fig2.jpeg", dpi=300, width=9, height=8, units="in")
+
 ```
+
 
 
 ```{r permanova to look at species * region}
@@ -443,7 +453,9 @@ nmds_pisaster_wastingcat <-plot_ordination(
   scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category") +
   scale_shape_manual(values=c(15, 16, 17, 4, 8)) +
   facet_grid(SiteType~Season, axes = "all_x") +
-  theme(strip.background = element_blank())
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 12, face = "bold"))
+  
 
 nmds_pisaster_wastingcat
 
@@ -458,12 +470,12 @@ nmds_pisaster_swabtype <-plot_ordination(
   physeq = pisaster_all_norm,
   ordination = diseased_pisaster_nmds,
   color = "DermisType2") +
- scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4")) + 
-  #facet_wrap(~SiteType) +
-   theme_classic() +
-  theme(
-    strip.background = element_blank() # Removes grey fil   # Removes border
-  )
+ scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") + 
+  theme_classic() +
+   facet_grid(SiteType~Season, axes = "all_x") +
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 12, face = "bold"))
+
 nmds_pisaster_swabtype
 
 

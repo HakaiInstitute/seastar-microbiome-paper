@@ -75,7 +75,8 @@ alpha_host_boxplot<-richness_host %>%
   theme_classic() +
   facet_wrap(~Host, labeller = as_labeller(host_labels, label_parsed)) +
   theme(legend.position="right") + guides(fill = "none", shape = "none", color ="none") +
-  theme(strip.background = element_blank())
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 13))
 
   
  alpha_host_boxplot     #boxplot version

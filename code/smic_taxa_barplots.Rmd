@@ -44,6 +44,8 @@ df_sum_pis_wasting <- df_pis_genus_rel %>%
   group_by(SiteType, WastingScore, Genus) %>%
   summarise(Abundance = mean(Abundance), .groups = "drop")
 
+df_sum_pis_wasting
+
 #collapse rare taxa into "Other" - definitely need to do this or there are way too many taxa!
 top_genera_pis_wasting <- df_sum_pis_wasting %>%
   group_by(Genus) %>%
@@ -59,7 +61,8 @@ df_sum_pis_wasting$Genus <- ifelse(df_sum_pis_wasting$Genus %in% top_genera_pis_
 
 unique(df_sum_pis_wasting$Genus)
 
-df_sum_pis_wasting$Genus = factor(df_sum_pis_wasting$Genus, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Psychrilyobacter", "Rubritalea", "Saprospiraceae Family","Reichenbachiella","Vibrio","Vibrionaceae Family","Other" )) 
+df_sum_pis_wasting$Genus = factor(df_sum_pis_wasting$Genus, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Flavobacteriaceae Family", "Rubritalea", "Saprospiraceae Family","Reichenbachiella","Vibrio","Vibrionaceae Family", "Other" )) 
+
 
 
 #Make the stacked bar chart
@@ -77,7 +80,14 @@ wastingscore_region<-ggplot(df_sum_pis_wasting, aes(x = WastingScore,
     legend.position = "right"
   ) + scale_fill_brewer(palette = "Spectral") +
   facet_wrap(~SiteType) +
-  theme(strip.background = element_blank())
+  #facet_grid(SiteType~Season, axes = "all_x") +
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 12, face = "bold")) +
+  theme(legend.text = element_text(size = 8))
+
+wastingscore_region
+
+ggsave(plot = wastingscore_region, filename ="wasting_barplot.jpeg", dpi=300, width=8, height=5, units="in")
 
 
 ```
@@ -113,12 +123,13 @@ df_sum_pis_swabtype$Genus = factor(df_sum_pis_swabtype$Genus, levels = c("Spiroc
 df_sum_pis_swabtype$DermisType2 = factor(df_sum_pis_swabtype$DermisType2, levels = c("H_healthy","H_diseased","L_diseased"))
 
 #Make the stacked bar chart
-ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
+tissuetype_region<-ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
                    y = Abundance,
                    fill = Genus)) +
   geom_bar(stat = "identity", width = 0.8) +
   scale_y_continuous(labels = scales::percent_format()) +
-  labs(x = "SwabType_SeaStarStatus",
+  scale_x_discrete(labels = c("H_healthy" = "AsymH", "H_diseased" = "WastNL", "L_diseased" = "WastL")) +
+  labs(x = "Tissue Type",
        y = "Proportion",
        fill = "Genus") +
   theme_classic() +
@@ -126,7 +137,10 @@ ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
     axis.text.x = element_text(angle = 0, hjust = 0.5),
     legend.position = "right"
   ) + scale_fill_brewer(palette = "Spectral") +
-  facet_grid(~SiteType)
+  facet_grid(~SiteType) + theme(strip.background = element_blank()) +
+   theme(strip.text = element_text(size = 12, face = "bold"))
+
+tissuetype_region
 
 ```
 
