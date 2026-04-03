@@ -47,7 +47,7 @@ healthy_all_b_trans <- healthy_all_b %>%
 
 
 #going with bray and NMDS
-healthy_host_nmds <- ordinate(healthy_all_b_trans, method = "NMDS", distance = "bray")
+healthy_host_nmds <- ordinate(healthy_all_b_trans, method = "PCoA", distance = "bray")
 
 nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samples",
   color = "Host", shape="SiteType") +
@@ -134,7 +134,7 @@ plot(ano_host)
 seawater_norm <- ps_filter(healthy_all_b_trans,
   (Host == "Seawater"))
 
-seawater.nmds <- ordinate(seawater_norm, method = "NMDS", distance = "bray")
+seawater.nmds <- ordinate(seawater_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 seawater_region_ord<-plot_ordination(
@@ -175,7 +175,7 @@ plot(beta_seawater)
 derm_norm <- ps_filter(healthy_all_b_trans,
   (Host == "Dermasterias imbricata"))
 
-derm.nmds <- ordinate(derm_norm, method = "NMDS", distance = "bray")
+derm.nmds <- ordinate(derm_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 derm_region_ord<-plot_ordination(
@@ -216,7 +216,7 @@ plot(beta_derm)
 pis_norm <- ps_filter(healthy_all_b_trans,
   (Host == "Pisaster ochraceus"))
 
-pis.nmds <- ordinate(pis_norm, method = "NMDS", distance = "bray")
+pis.nmds <- ordinate(pis_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 pis_region_ord<-plot_ordination(
@@ -423,14 +423,14 @@ table(sample_data(pisaster_all_norm)$Disease_Status_Star)
 
 
 #going with bray and NMDS
-diseased_pisaster_nmds <- ordinate(pisaster_all_norm, method = "NMDS", distance = "bray")
+diseased_pisaster_nmds <- ordinate(pisaster_all_norm, method = "PCoA", distance = "bray")
 
 
 # Plot of Pisaster based on healthy vs diseased stars
 nmds_pisaster_diseasestat <-plot_ordination(
 physeq = pisaster_all_norm,
   ordination = diseased_pisaster_nmds,
-  color = "WastingCategory") +
+  color = "Disease_Status_Star") +
  scale_color_manual(values = c("turquoise2", "maroon")) + 
   facet_grid(~SiteType) +
   theme_classic()
