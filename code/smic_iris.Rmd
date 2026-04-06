@@ -59,7 +59,7 @@ pis_ord <- smicpf %>%
   transform_sample_counts(function(x) x / sum(x)) %>%
   subset_samples(Host == "Pisaster ochraceus" & WastingScore == 0) %>% 
   dist_calc("bray") %>%
-  ord_calc(method = "NMDS")
+  ord_calc(method = "PCoA")
 
 pis_ord
 
@@ -89,7 +89,7 @@ derm_ord <- smicpf  %>%
   transform_sample_counts(function(x) x / sum(x)) %>%
   subset_samples(Host == "Dermasterias imbricata" & WastingScore == 0) %>% #healthy only
   dist_calc("bray") %>%
-  ord_calc(method = "NMDS")
+  ord_calc(method = "PCoA")
 
 derm_iris<-ord_plot_iris(
   data = derm_ord,
@@ -111,7 +111,7 @@ iris_grid<-ggarrange(pis_iris, derm_iris, ncol = 2, common.legend = TRUE, legend
 
 iris_grid
 
-ggsave("iris_grid_nmds.jpeg", iris_grid, height = 8, width = 8, dpi=300)
+ggsave("iris_grid_pcoa.jpeg", iris_grid, height = 8, width = 8, dpi=300)
 ```
 
 ```{R Healthy Stars and Seawater Class Iris Plot}
@@ -133,7 +133,7 @@ all_ord <- smicpf %>%
   transform_sample_counts(function(x) x / sum(x)) %>%
   subset_samples(WastingScore == 0 | Host == "Seawater") %>% 
   dist_calc("bray") %>%
-  ord_calc(method = "NMDS")
+  ord_calc(method = "PCoA")
 
 all_iris<-ord_plot_iris(
   data = all_ord,
@@ -145,7 +145,7 @@ all_iris<-ord_plot_iris(
 ) +
   scale_color_manual(values = c("#AD002AFF","#925E9FFF", "#0099B4FF"))
 
-ggsave("all_host_iris_nmds.pdf", all_iris, height = 5, width = 6)
+ggsave("all_host_iris_pcoa.pdf", all_iris, height = 5, width = 6)
 
 
 ```
