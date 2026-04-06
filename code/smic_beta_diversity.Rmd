@@ -42,14 +42,15 @@ healthy_all_b <- ps_filter(
 
 #first we need to normalize the data, regardless of ordination method
 
-healthy_all_b_trans <- healthy_all_b %>%
+healthy_all_b_norm <- healthy_all_b %>%
   transform_sample_counts(function(x) {x/sum(x)})
 
+#note, tried NMDS here, including increasing trymax = 1000 and k=3, also tried with Hellinger transformation and was not converging/stress values were on the cusp of acceptable so decided to go with PCoA
 
-#going with bray and NMDS
-healthy_host_nmds <- ordinate(healthy_all_b_trans, method = "PCoA", distance = "bray")
+healthy_host_pcoa <- phyloseq::ordinate(healthy_all_b_norm, method = "PCoA", distance = "bray", trymax = 1000, k = 3)
 
-nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samples",
+
+pcoa_sampletype <-plot_ordination(healthy_all_b_norm, healthy_host_pcoa, type = "samples",
   color = "Host", shape="SiteType") +
   theme_classic() +
    scale_color_manual(values = c("#AD002AFF", "#925E9FFF","#0099B4FF"), 
@@ -62,7 +63,7 @@ nmds_host <-plot_ordination(healthy_all_b_trans, healthy_host_nmds, type = "samp
   labs(color = "Sample Type", shape = "Region")
 
 
-nmds_host
+pcoa_sampletype
 
 
 ```
@@ -71,10 +72,9 @@ Combining alpha and diversity plots by sample type to create Figure 2
 
 ```{r}
 
+alpha_plot <- readRDS("alpha_host_boxplot.rds")
 
-alpha_host_boxplot
-
-fig2<-ggarrange(alpha_host_boxplot, nmds_host, legend = "right", labels = c("A", "B"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
+fig2<-ggarrange(alpha_plot, pcoa_sampletype, legend = "right", labels = c("A", "B"), ncol=1, heights = c(1, 1.5), common.legend = FALSE)
 
 fig2
 
@@ -84,7 +84,7 @@ ggsave("fig2.jpeg", dpi=300, width=9, height=8, units="in")
 
 
 
-```{r permanova to look at species * region}
+```{r permanova to look at effect of host/sample type on alpha div}
 
 #using adonis to run a PERMANOVA by kit and species
 
@@ -92,10 +92,10 @@ ggsave("fig2.jpeg", dpi=300, width=9, height=8, units="in")
 set.seed(1)
 
 # Calculate bray curtis distance matrix
-dist_mat_host <- phyloseq::distance(healthy_all_b_trans, method = "bray")
+dist_mat_host <- phyloseq::distance(healthy_all_b_norm, method = "bray")
 
 # make a data frame from the sample_data
-host_df <- data.frame(sample_data(healthy_all_b_trans))
+host_df <- data.frame(sample_data(healthy_all_b_norm))
 
 # Permanova by Host
 adonis2(dist_mat_host~ Host, data = host_df)
@@ -109,7 +109,6 @@ anova(beta_host)
 plot(beta_host)
 
 #PERMANOVA assumes homogeneity of multivariate dispersion.
-
 
 ```
 
@@ -134,12 +133,12 @@ plot(ano_host)
 seawater_norm <- ps_filter(healthy_all_b_trans,
   (Host == "Seawater"))
 
-seawater.nmds <- ordinate(seawater_norm, method = "PCoA", distance = "bray")
+seawater.pcoa <- ordinate(seawater_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 seawater_region_ord<-plot_ordination(
   physeq = seawater_norm,
-  ordination = seawater.nmds,
+  ordination = seawater.pcoa,
   color = "SiteType", shape = "Season") +
   scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
@@ -172,15 +171,15 @@ plot(beta_seawater)
  
 ```{r Testing for effect of region within Derm}
 
-derm_norm <- ps_filter(healthy_all_b_trans,
+derm_norm <- ps_filter(healthy_all_b_norm,
   (Host == "Dermasterias imbricata"))
 
-derm.nmds <- ordinate(derm_norm, method = "PCoA", distance = "bray")
+derm.pcoa <- ordinate(derm_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 derm_region_ord<-plot_ordination(
   physeq = derm_norm,
-  ordination = derm.nmds,
+  ordination = derm.pcoa,
   color = "SiteType") +
   scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
@@ -213,15 +212,15 @@ plot(beta_derm)
 
 ```{r Testing for effect of region within Pisaster}
 
-pis_norm <- ps_filter(healthy_all_b_trans,
+pis_norm <- ps_filter(healthy_all_b_norm,
   (Host == "Pisaster ochraceus"))
 
-pis.nmds <- ordinate(pis_norm, method = "PCoA", distance = "bray")
+pis.pcoa <- ordinate(pis_norm, method = "PCoA", distance = "bray")
 
 # Plot of seawater communities between regions
 pis_region_ord<-plot_ordination(
   physeq = pis_norm,
-  ordination = pis.nmds,
+  ordination = pis.pcoa,
   color = "SiteType") +
   scale_color_manual(values = c("orange","mediumturquoise")) + 
   theme_classic() +
@@ -246,8 +245,8 @@ adonis2(dist_mat_pis~ SiteType, data = pis_df)
 beta_pis <- betadisper(dist_mat_pis, pis_df$SiteType)
 permutest(beta_pis ) # P = 0.001
 
-anova(beta_pis )
-plot(beta_pis )
+anova(beta_pis)
+plot(beta_pis)
 
 #Pisaster data don't meet PERMANOVA assmumption so running ANOSIM instead
 ano_pis <- anosim(dist_mat_pis, pis_df$SiteType, permutations = 999)
@@ -266,11 +265,11 @@ plot(ano_pis)
 # Plot of seawater communities across seasons 
 seawater_season_ord<-plot_ordination(
   physeq = seawater_norm,
-  ordination = seawater.nmds,
+  ordination = seawater.pcoa,
   color = "Season") +
   #scale_color_manual(values = c("coral2", "lightseagreen", "darkgoldenrod2", "darkslateblue")) 
-  scale_color_brewer(palette="Set1") +
- facet_grid(SiteType~Year) +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) +
+ facet_grid(SiteType~Year, axes = "all_x") +
   theme_classic() +
    ggtitle("Seawater")
 
@@ -283,11 +282,10 @@ adonis2(dist_mat_seawater~Season, data = seawater_df)
 #beta dispersion test
 beta_seawater_season <- betadisper(dist_mat_seawater, seawater_df$Season)
 permutest(beta_seawater_season)
-# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannnot technically use a PERMANOVA
+# P < 0.001, significant value indicates that the homogeneity of multivariate dispersions (variances) assumption is violated so we cannot technically use a PERMANOVA
 
-anova(beta_seawater_season )
-plot(beta_seawater_season )
-
+anova(beta_seawater_season)
+plot(beta_seawater_season)
 
 #using adonis to run a PERMANOVA by region within seawater
 
@@ -326,10 +324,10 @@ plot(ano_seawater_season)
 # Plot of healthy Derm across seasons
 derm_season_ord<-plot_ordination(
   physeq = derm_norm,
-  ordination = derm.nmds,
+  ordination = derm.pcoa,
   color = "Season") +
-  scale_color_brewer(palette="Set1") +
-  facet_grid(SiteType~Year) +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) +
+  facet_grid(SiteType~Year, axes = "all_x") +
   theme_classic() +
    ggtitle("Dermasterias imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
 
@@ -366,11 +364,11 @@ plot(ano_derm_season)
 # Plot of healthy Pisaster across seasons
 pis_season_ord<-plot_ordination(
   physeq = pis_norm,
-  ordination = pis.nmds,
+  ordination = pis.pcoa,
   color = "Season") +
-  scale_color_brewer(palette="Set1") + 
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) + 
  # facet_grid(SiteType~Year) +
-  facet_grid(SiteType~Year) +
+  facet_grid(SiteType~Year, axes = "all_x") +
   theme_classic() +
   ggtitle("Pisaster ochraceus") + theme(plot.title = element_text(size = 10, face = "italic"))
 
@@ -399,7 +397,7 @@ ano_pis_season <- anosim(dist_mat_pis, pis_df$Season, permutations = 999)
 summary(ano_pis_season)
 plot(ano_pis_season)
 
-#combine all three hosts nmds season plots
+#combine all three hosts pcoa season plots
 ggarrange(seawater_season_ord, derm_season_ord, pis_season_ord, common.legend=TRUE, ncol=1, align = "v", legend = "right")
 
 ```
@@ -422,20 +420,21 @@ table(sample_data(pisaster_all_norm)$DermisType2)
 table(sample_data(pisaster_all_norm)$Disease_Status_Star)
 
 
-#going with bray and NMDS
-diseased_pisaster_nmds <- ordinate(pisaster_all_norm, method = "PCoA", distance = "bray")
+#ordination with bray and PCoA
+diseased_pisaster_pcoa <- ordinate(pisaster_all_norm, 
+    method = "PCoA", distance = "bray")
 
 
 # Plot of Pisaster based on healthy vs diseased stars
-nmds_pisaster_diseasestat <-plot_ordination(
+pisaster_diseasestat <-plot_ordination(
 physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_nmds,
+  ordination = diseased_pisaster_pcoa,
   color = "Disease_Status_Star") +
  scale_color_manual(values = c("turquoise2", "maroon")) + 
   facet_grid(~SiteType) +
   theme_classic()
 
-nmds_pisaster_diseasestat
+pisaster_diseasestat
 
 #plotting Pisaster across wasting categories by season and region
 
@@ -444,9 +443,9 @@ season_order <- c("Winter", "Spring", "Summer", "Fall")
 sample_data(pisaster_all_norm)$Season <- factor(sample_data(pisaster_all_norm)$Season, levels = season_order)
 
 
-nmds_pisaster_wastingcat <-plot_ordination(
+pisaster_wastingcat <-plot_ordination(
   physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_nmds,
+  ordination = diseased_pisaster_pcoa,
   color = "WastingCategory", 
   shape = "WastingScore") +
  theme_classic() +
@@ -456,19 +455,18 @@ nmds_pisaster_wastingcat <-plot_ordination(
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 12, face = "bold"))
   
+pisaster_wastingcat
 
-nmds_pisaster_wastingcat
-
-ggsave(plot =nmds_pisaster_wastingcat, filename ="nmds_wastingcat.jpeg", dpi=300, width=7, height=5, units="in")
+saveRDS(pisaster_wastingcat, file = "pisaster_wastingcat.rds")
 
 
 # Plot of Pisaster based on swab type 
 #H_healthy
 #H_diseased
 #L_diseased
-nmds_pisaster_swabtype <-plot_ordination(
+pisaster_swabtype <-plot_ordination(
   physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_nmds,
+  ordination = diseased_pisaster_pcoa,
   color = "DermisType2") +
  scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") + 
   theme_classic() +
@@ -476,30 +474,38 @@ nmds_pisaster_swabtype <-plot_ordination(
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 12, face = "bold"))
 
-nmds_pisaster_swabtype
+pisaster_swabtype
 
-
-
-ggarrange(richness_wasting_plot, nmds_pisaster_all, align = "v", legend = "right", labels = "A", "B", ncol=1)
-
+saveRDS(pisaster_swabtype, file = "pisaster_swabtype.rds")
 
 
 #trying another ordination with just H_diseased and L_diseased
 
+#here we want to just compare H_diseased and L_diseased so ignore H_healthy
+pisaster_diseased <- ps_filter(decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus" & DermisType2 != "H_healthy"))
+
+#check if it worked
+table(sample_data(pisaster_diseased)$DermisType2)
+  
+pisaster_disease_norm <- pisaster_diseased %>%
+  transform_sample_counts(function(x) {x/sum(x)})
+
 #going with bray and NMDS
-diseased_only_nmds<- ordinate(pisaster_disease_norm, method = "NMDS", distance = "bray")
+diseased_only_pcoa<- ordinate(pisaster_disease_norm, method = "PCoA", distance = "bray")
 
 
-nmds_pisaster_diseaseonly <-plot_ordination(
+pisaster_diseaseonly <-plot_ordination(
   physeq = pisaster_disease_norm,
-  ordination = diseased_only_nmds,
+  ordination = diseased_only_pcoa,
   color = "DermisType2") +
- scale_color_manual(values = c("#26547c", "lightgreen", "#ef476f")) + 
+ scale_color_manual(values = c("olivedrab", "deepskyblue4")) + 
    theme_classic2() +
   theme(
     strip.background = element_blank() # Removes grey fil   # Removes border
   )
-nmds_pisaster_diseaseonly
+
+pisaster_diseaseonly
 
 
 ```
@@ -539,7 +545,6 @@ plot(anosim_disease_status)
 #ANOSIM statistic R: 0.005812    Significance: 0.274
 
 
-
 # Permanova by wasting category
 adonis2(dist_mat_wasting~ WastingCategory, data = pis_df_wasting)
 
@@ -559,16 +564,26 @@ plot(anosim_wastingcat)
 
 
 ####### and by SWAB TYPE
+pis_df_wasting
+
+adonis2(dist_mat_wasting~ DermisType2, data = pis_df_wasting)
+
+#beta dispersion test
+beta_tissuetype<- betadisper(dist_mat_wasting, pis_df_wasting$DermisType2)
+permutest(beta_tissuetype) # P = 0.087
+
+anova(beta_tissuetype)  #0.08
+plot(beta_tissuetype)
+
+#Pisaster tissue type on the cusp of meeting PERMANOVA assmumption so running ANOSIM instead
+anosim_tissuetype <- anosim(dist_mat_wasting, pis_df_wasting$DermisType2, permutations = 999)
+
+# 5. View results
+summary(anosim_tissuetype)   #ANOSIM statistic R: -0.006, Significance:  0.633
+plot(anosim_tissuetype)
 
 
-#here we want to just compare H_diseased and L_diseased so ignore H_healthy
-pisaster_diseased <- ps_filter(decontam_filter_nonegs_prev,
-  (Host == "Pisaster ochraceus" & DermisType2 != "H_healthy"))
-  
-pisaster_diseased
-pisaster_disease_norm <- pisaster_diseased %>%
-  transform_sample_counts(function(x) {x/sum(x)})
-
+#TO COMPARE ONLY H-diseased and L-diseased, ignoring H-healthy
 dist_mat_disease <- phyloseq::distance(pisaster_disease_norm, method = "bray")
 
 # make a data frame from the sample_data
