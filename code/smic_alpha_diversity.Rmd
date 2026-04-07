@@ -393,7 +393,7 @@ season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.l
 
 season_panel
 
-ggsave("season_panel.jpeg", dpi=300, width=9, height=8, units="in")
+ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=8, units="in")
 ```
 
 
@@ -521,6 +521,8 @@ r.squaredGLMM(mod3_wastingyear)
 r.squaredGLMM(mod4_null_wasting)
 
 
+packageVersion("indicspecies")
+
 
 ```
 
@@ -579,21 +581,23 @@ richness_tissuetype<-richness_wasting %>%
   labs(x = NULL, y = " Inv. Simpson") +
   facet_wrap(~Region, scales = "free", axes = "all_x") +
   scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") +
-  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
   theme_classic() +
+  scale_x_discrete(labels = c("AsympH", "WastingNL", "WastingL")) +
   theme(legend.position="right") +
   guides(color = "none") +
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 0, face = "bold"))
 
+richness_tissuetype
+
   #ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic")) +
 
-
-richness_tissuetype
 
 wasting_alpha<-ggarrange(richness_wastingcat, richness_tissuetype, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("A", "B"))
 
 wasting_alpha
+
+ggsave(plot = wasting_alpha, "wasting_alpha.jpeg", dpi=300, width=9, height=7, units="in")
 
   
 ```
