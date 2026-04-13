@@ -486,6 +486,7 @@ richness_wasting_plot
 ```{r mixed effects model pisaster wasting score}
 richness_wasting
 
+
 mod1_wastingcat<-glmer(InvSimpson~WastingCategory + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
 
 mod2_year_only<-glmer(InvSimpson~Year + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
@@ -550,13 +551,13 @@ richness_wastingcat<-richness_wasting %>%
   pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = WastingCategory, y = value, color = WastingCategory)) +
- geom_boxplot(outlier.color = NA)  +
- geom_jitter(aes(shape = WastingScore), alpha=0.4, height = 0, width = .2) +
+  ggplot(aes(x = WastingCategory, y = value, color = WastingCategory, fill = WastingCategory)) +
+ geom_boxplot(alpha = 0.4, outlier.shape = NA, outlier.colour = NA)  +
+ geom_jitter(aes(shape = WastingScore), alpha=0.4, height = 0, width = .3) +
   labs(x = NULL, y = " Inv. Simpson") +
   facet_wrap(~Region, scales = "free", axes = "all_x") +
   scale_color_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"), name = "Wasting Category") +
-  #scale_fill_manual(values = alpha(c("#AD002AFF", "#925E9FFF", "darkblue")), 0.5) +
+  scale_fill_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"), name = "Wasting Category") +
   theme_classic() +
   theme(legend.position="right") +
   guides(color = "none") +
@@ -575,12 +576,13 @@ richness_tissuetype<-richness_wasting %>%
   pivot_longer(cols = "InvSimpson",
                names_to = "metric",
                values_to = "value") %>%
-  ggplot(aes(x = TissueType, y = value, color = TissueType)) +
- geom_boxplot(outlier.color = NA)  +
- geom_jitter(aes(shape = WastingScore), alpha=0.4, height = 0, width = .2) +
+  ggplot(aes(x = TissueType, y = value, color = TissueType, fill = TissueType)) +
+ geom_boxplot(alpha = 0.4, outlier.shape = NA, outlier.colour = NA)  +
+ geom_jitter(aes(shape = WastingScore), alpha=0.4, height = 0, width = .3) +
   labs(x = NULL, y = " Inv. Simpson") +
   facet_wrap(~Region, scales = "free", axes = "all_x") +
-  scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") +
+  scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") + 
+  scale_fill_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") +
   theme_classic() +
   scale_x_discrete(labels = c("AsympH", "WastingNL", "WastingL")) +
   theme(legend.position="right") +
