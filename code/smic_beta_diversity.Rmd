@@ -166,6 +166,7 @@ permutest(beta_seawater)
 
 anova(beta_seawater)
 plot(beta_seawater)
+
 ```
 
  
@@ -410,75 +411,127 @@ ggarrange(seawater_season_ord, derm_season_ord, pis_season_ord, common.legend=TR
 #want all Pisaster in this case, not just healthy
 
 pisaster_all <- ps_filter(decontam_filter_nonegs_prev,
-  (Host == "Pisaster ochraceus"))
+  (Host == "Pisaster ochraceus")) 
+
+
+
+pisaster_quadra <- ps_filter(decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus" & SiteType == "Quadra")) 
+
+pisaster_calvert <- ps_filter(decontam_filter_nonegs_prev,
+  (Host == "Pisaster ochraceus" & SiteType == "Calvert")) 
+
   
-pisaster_all_norm <- pisaster_all %>%
+pisaster_quadra_norm <- pisaster_quadra %>%
   transform_sample_counts(function(x) {x/sum(x)})
 
-table(sample_data(pisaster_all_norm)$WastingCategory)
-table(sample_data(pisaster_all_norm)$DermisType2)
-table(sample_data(pisaster_all_norm)$Disease_Status_Star)
+pisaster_calvert_norm <- pisaster_calvert %>%
+  transform_sample_counts(function(x) {x/sum(x)})
 
+table(sample_data(pisaster_quadra_norm)$WastingCategory)
+table(sample_data(pisaster_quadra_norm)$DermisType2)
+table(sample_data(pisaster_quadra_norm)$Disease_Status_Star)
+
+
+#ordination with bray and PCoA, within each region separately
+diseased_pisaster_quadra_pcoa <- ordinate(pisaster_quadra_norm, 
+    method = "PCoA", distance = "bray")
 
 #ordination with bray and PCoA
-diseased_pisaster_pcoa <- ordinate(pisaster_all_norm, 
+diseased_pisaster_calvert_pcoa <- ordinate(pisaster_calvert_norm, 
     method = "PCoA", distance = "bray")
 
 
 # Plot of Pisaster based on healthy vs diseased stars
-pisaster_diseasestat <-plot_ordination(
-physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_pcoa,
+pisaster_diseasestat_quadra <-plot_ordination(
+physeq = pisaster_quadra,
+  ordination = diseased_pisaster_quadra_pcoa,
   color = "Disease_Status_Star") +
  scale_color_manual(values = c("turquoise2", "maroon")) + 
-  facet_grid(~SiteType) +
+  facet_grid(~Site) +
   theme_classic()
 
-pisaster_diseasestat
+pisaster_diseasestat_quadra
+
+pisaster_diseasestat_calvert <-plot_ordination(
+physeq = pisaster_calvert,
+  ordination = diseased_pisaster_calvert_pcoa,
+  color = "Disease_Status_Star") +
+ scale_color_manual(values = c("turquoise2", "maroon")) + 
+  facet_grid(~Site) +
+  theme_classic()
+
+pisaster_diseasestat_calvert
 
 #plotting Pisaster across wasting categories by season and region
 
 season_order <- c("Winter", "Spring", "Summer", "Fall")
 
-sample_data(pisaster_all_norm)$Season <- factor(sample_data(pisaster_all_norm)$Season, levels = season_order)
+sample_data(pisaster_quadra_norm)$Season <- factor(sample_data(pisaster_quadra_norm)$Season, levels = season_order)
+
+sample_data(pisaster_calvert_norm)$Season <- factor(sample_data(pisaster_calvert_norm)$Season, levels = season_order)
 
 
-pisaster_wastingcat <-plot_ordination(
-  physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_pcoa,
+#plotting by season within Pisaster on Quadra
+pisaster_wastingcat_quadra <-plot_ordination(
+  physeq = pisaster_quadra_norm,
+  ordination = diseased_pisaster_quadra_pcoa,
   color = "WastingCategory", 
   shape = "WastingScore") +
  theme_classic() +
   scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category") +
-  scale_shape_manual(values=c(15, 16, 17, 4, 8)) +
   facet_grid(SiteType~Season, axes = "all_x") +
   theme(strip.background = element_blank()) +
-  theme(strip.text = element_text(size = 12, face = "bold"))
+  theme(strip.text = element_text(size = 10))
   
-pisaster_wastingcat
+pisaster_wastingcat_quadra
 
-saveRDS(pisaster_wastingcat, file = "pisaster_wastingcat.rds")
+#plotting by season within Pisaster on Calvert
+pisaster_wastingcat_calvert <-plot_ordination(
+  physeq = pisaster_calvert_norm,
+  ordination = diseased_pisaster_calvert_pcoa,
+  color = "WastingCategory", 
+  shape = "WastingScore") +
+ theme_classic() +
+scale_color_manual(values = c("aquamarine2", "orchid1", "mediumorchid4"), name = "Wasting Category") +
+  facet_grid(SiteType~Season, axes = "all_x")  +
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 10))
+  
+pisaster_wastingcat_calvert
 
+wastingcat_pcoa_region<-ggarrange(pisaster_wastingcat_quadra, pisaster_wastingcat_calvert, ncol=1, align = "v", legend = "right", common.legend=TRUE, labels = c("A", "B"))
 
-# Plot of Pisaster based on swab type 
-#H_healthy
-#H_diseased
-#L_diseased
-pisaster_swabtype <-plot_ordination(
-  physeq = pisaster_all_norm,
-  ordination = diseased_pisaster_pcoa,
+wastingcat_pcoa_region
+
+# Plot of Pisaster based on swab type  within each region
+pisaster_swabtype_quadra <-plot_ordination(
+  physeq = pisaster_quadra_norm,
+  ordination = diseased_pisaster_quadra_pcoa,
   color = "DermisType2") +
- scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type") + 
+ scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type", labels = c("AsympH", "WastingNL", "WastingL")) + 
   theme_classic() +
    facet_grid(SiteType~Season, axes = "all_x") +
   theme(strip.background = element_blank()) +
-  theme(strip.text = element_text(size = 12, face = "bold"))
+  theme(strip.text = element_text(size = 10))
 
-pisaster_swabtype
+pisaster_swabtype_quadra
 
-saveRDS(pisaster_swabtype, file = "pisaster_swabtype.rds")
+pisaster_swabtype_calvert <-plot_ordination(
+  physeq = pisaster_calvert_norm,
+  ordination = diseased_pisaster_calvert_pcoa,
+  color = "DermisType2") +
+ scale_color_manual(values = c("olivedrab", "deepskyblue", "deepskyblue4"), name = "Tissue Type", labels = c("AsympH", "WastingNL", "WastingL")) + 
+  theme_classic() +
+   facet_grid(SiteType~Season, axes = "all_x") +
+  theme(strip.background = element_blank()) +
+  theme(strip.text = element_text(size = 10))
 
+pisaster_swabtype_calvert
 
+tissuetype_pcoa_region<-ggarrange(pisaster_swabtype_quadra, pisaster_swabtype_calvert, ncol=1, align = "v", legend = "right", common.legend=TRUE, labels = c("A", "B"))
+
+tissuetype_pcoa_region
 #trying another ordination with just H_diseased and L_diseased
 
 #here we want to just compare H_diseased and L_diseased so ignore H_healthy

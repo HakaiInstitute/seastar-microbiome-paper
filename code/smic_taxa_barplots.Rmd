@@ -41,7 +41,7 @@ df_pis_genus_rel
 #summarize by WastingScore
 
 df_sum_pis_wasting <- df_pis_genus_rel %>%
-  group_by(SiteType, WastingScore, Genus) %>%
+  group_by(SiteType, WastingCategory, Genus) %>%
   summarise(Abundance = mean(Abundance), .groups = "drop")
 
 df_sum_pis_wasting
@@ -66,12 +66,12 @@ df_sum_pis_wasting$Genus = factor(df_sum_pis_wasting$Genus, levels = c("Spirocha
 
 
 #Make the stacked bar chart
-wastingscore_region<-ggplot(df_sum_pis_wasting, aes(x = WastingScore,
+wastingcat_region<-ggplot(df_sum_pis_wasting, aes(x = WastingCategory,
                    y = Abundance,
                    fill = Genus)) +
   geom_bar(stat = "identity", width = 0.8) +
   scale_y_continuous(labels = scales::percent_format()) +
-  labs(x = "Wasting Score",
+  labs(x = "Wasting Category",
        y = "Proportion",
        fill = "Genus") +
   theme_classic() +
@@ -82,12 +82,14 @@ wastingscore_region<-ggplot(df_sum_pis_wasting, aes(x = WastingScore,
   facet_wrap(~SiteType) +
   #facet_grid(SiteType~Season, axes = "all_x") +
   theme(strip.background = element_blank()) +
-  theme(strip.text = element_text(size = 12, face = "bold")) +
-  theme(legend.text = element_text(size = 8))
+  theme(strip.text = element_text(size = 10, face = "bold")) +
+  theme(legend.text = element_text(size = 8)) + 
+  theme(legend.key.height = unit(0.3, "cm")) + 
+  theme(legend.key.width = unit(0.3, "cm"))
 
-wastingscore_region
+wastingcat_region
 
-ggsave(plot = wastingscore_region, filename ="wasting_barplot.jpeg", dpi=300, width=8, height=5, units="in")
+#ggsave(plot = wastingscore_region, filename ="wasting_barplot.jpeg", dpi=300, width=8, height=5, units="in")
 
 
 ```
