@@ -79,47 +79,50 @@ alpha_host_boxplot<-richness_host %>%
   theme(legend.position="right") + guides(fill = "none", shape = "none", color ="none") +
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 13), axis.text.x = element_blank())
+
 #remove x-axis labels because combining with beta div plot which has legend
   
- alpha_host_boxplot     #boxplot version
+alpha_host_boxplot     #boxplot version
  
- saveRDS(alpha_host_boxplot, file = "alpha_host_boxplot.rds")
+saveRDS(alpha_host_boxplot, file = "alpha_host_boxplot.rds")
 
 ```
 
 #Mixed effects models to test relative effects of host and region on alpha diversity (inv simpson index)
 
 ```{r}
-
-packageVersion("phyloseq")
-library(lme4)
+library(stats)
 library(MuMIn)
 library(DHARMa)
-library(performance)
 
-#run 4 models to compare: 
-#in this case we don't have a random effect. initially had year as a random effect but it was not adding any explanitory power to the model so removed
+#run 4 models to compare - mostly interested in the effect of host / sample type here but need to consider Region as well, and include Site as a random effect nested within Region
 
-mod1_host<-glmer(InvSimpson~Host + (1 | Region/Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+mod1_host<-glm(InvSimpson~Host, data = richness_host, family = Gamma(link = "log"))
 
-mod2_region<-glmer(InvSimpson~Region + (1 | Region/Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+mod2_region<-glm(InvSimpson~Region, data = richness_host, family = Gamma(link = "log"))
 
-mod3_regionhost <- glmer(InvSimpson~Host*Region + (1 | Region/Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+mod3_regionhost<-glm(InvSimpson~Region*Host, data = richness_host,family = Gamma(link = "log"))
 
-mod4_null<- glmer(InvSimpson~ 1 + (1 | Region/Site), data = richness_host, na.action = "na.fail", family=Gamma(link = "log"))
+mod4_null<-glm(InvSimpson~1,data = richness_host,family = Gamma(link = "log"))
 
+#check model fit (plug in 1 model at a time)
+sim_res <- simulateResiduals(mod3_regionhost)
+plot(mod3_regionhost)
 
 #comparing all 4 models
 hostregion_sel<-model.sel(mod1_host, mod2_region, mod3_regionhost, mod4_null, rank = "AICc", beta = "sd")
 
 hostregion_sel
 
-#calculate R2 (marginal and conditional for each model)
-r.squaredGLMM(mod1_host)
-r.squaredGLMM(mod2_region)
-r.squaredGLMM(mod3_regionhost)
-r.squaredGLMM(mod4_null)
+#Check R2 fit of the models
+library(performance)
 
+r2(mod3_regionhost)
+r2(mod1_host)
+r2(mod2_region)
+r2(mod4_null)
+
+#get the output of the model selection
 
 library(flextable)
 
@@ -148,11 +151,6 @@ seawater  <- ps_filter(
   decontam_filter_nonegs,
   (Host == "Seawater"))
 
-seawater
-ntaxa(seawater)
-nsamples(seawater)
-sample_data(seawater)
-
 ### SEAWATER RICHNESS ###
 richness_seawater <- data.frame(
   "InvSimpson" = phyloseq::estimate_richness(seawater, measures = "InvSimpson"),
@@ -169,7 +167,6 @@ richness_seawater$Season <- factor(
   levels = c("Winter", "Spring", "Summer", "Fall"))
 
 
-
 #Inverse simpson seawater by region and year
 
 seawater_seasonal<-richness_seawater %>%
@@ -178,14 +175,14 @@ seawater_seasonal<-richness_seawater %>%
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
   geom_boxplot(alpha = 0.4, outlier.shape = NA) +
- geom_jitter(aes(shape = Region), alpha=0.3, height = 0, width = .2) +
+ geom_jitter(aes(shape = Year), alpha=0.3, height = 0, width = .2) +
   labs(x = NULL, y = "Inv. Simpson") +
   scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
   scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
-  scale_shape_manual(values = c(8, 15)) +
+  #scale_shape_manual(values = c(8, 15)) +
   theme_classic() + 
   #theme(axis.text.x = element_blank()) +
-  facet_wrap(~Year, ncol=4) +
+  facet_wrap(~Region, ncol=1) +
   scale_y_continuous(limits = c(0, 200)) +
   guides(color = "none", fill = "none") +
   ggtitle("Seawater") + theme(plot.title = element_text(size = 10)) +
@@ -193,6 +190,7 @@ seawater_seasonal<-richness_seawater %>%
    theme(strip.background = element_blank() # This removes the box and background
   )
 
+#could also facet by region instead of using shapes
 
 seawater_seasonal
 
@@ -203,20 +201,33 @@ seawater_seasonal
 
 richness_seawater
 
-mod1_season<-glmer(InvSimpson~Season + (1 |Region), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+mod1_season_sw<-glm(InvSimpson~Season, data = richness_seawater, family = Gamma(link = "log"))
 
-mod2_year<-glmer(InvSimpson~Year + (1 |Region), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+mod2_region_sw<-glm(InvSimpson~Region, data = richness_seawater, family = Gamma(link = "log"))
 
-mod3_seasonyear <- glmer(InvSimpson~Season*Year +  (1 |Region), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+mod3_seasonregion_sw<-glm(InvSimpson~Season*Region, data = richness_seawater, family = Gamma(link = "log"))
 
-mod4_nullseason<- glmer(InvSimpson~ 1+ (1 |Region), data = richness_seawater, na.action = "na.fail", family=Gamma(link = "log"))
+mod4_nullseason_sw<- glm(InvSimpson~1, data = richness_seawater, family = Gamma(link = "log"))
 
+#check model fit (plug in 1 model at a time)
+sim_res_sw <- simulateResiduals(mod3_seasonregion_sw)
+plot(sim_res_sw)
+plot(mod3_regionhost)
+#Check R2 fit of the models
 
 #comparing all 4 models
-season_sel<-model.sel(mod1_season, mod2_year, mod3_seasonyear, mod4_nullseason, rank = "AICc", beta = "sd")
+season_sel<-model.sel(mod1_season_sw, mod2_region_sw, mod3_seasonregion_sw, mod4_nullseason_sw, rank = "AICc", beta = "sd")
 
 season_sel
 
+library(performance)
+
+r2(mod3_seasonregion_sw)
+r2(mod1_season_sw)
+r2(mod2_region_sw)
+r2(mod4_nullseason_sw)
+
+#save model selection results as a data frame
 season_sel_df <- as.data.frame(season_sel) %>%
   rownames_to_column(var = "season_sel") %>%  # optional: make model names a column
   select(season_sel, df, logLik, AICc, delta, weight)  # pick columns you want
@@ -231,21 +242,6 @@ library(officer)
 doc_season_sw <- read_docx()
 doc_season_sw<- body_add_flextable(doc_season_sw, ft_season_sw)
 print(doc_season_sw, target = "season_seawater_table.docx")
-
-
-#calculate R2 (marginal and conditional for each model)
-r.squaredGLMM(mod1_season)
-r.squaredGLMM(mod2_year)
-r.squaredGLMM(mod3_seasonyear)
-r.squaredGLMM(mod4_nullseason)
-
-
-# Simulate residuals
-simulated_residuals_seawater <- simulateResiduals(mod1_season)
-
-# Plot the diagnostics
-plot(simulated_residuals_seawater)
-plotResiduals(simulated_residuals_seawater)
 
 ```
 
@@ -278,17 +274,16 @@ derm_seasonal<- richness_derm %>%
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
   geom_boxplot(alpha=0.4, outlier.shape = NA) +
- geom_jitter(aes(shape = Region), height = 0, width = .2, alpha = 0.3) +
+ geom_jitter(aes(shape = Year), height = 0, width = .2, alpha = 0.3) +
   labs(x = NULL, y = "Inv. Simpson") +
     scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
   scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
-  scale_shape_manual(values = c(8, 15)) +
+  #scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
-  facet_wrap(~Year, ncol=4) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  facet_wrap(~Region, ncol=1)  + 
   guides(color = "none", fill = "none") +
-  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic")) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
    theme(strip.background = element_blank() # This removes the box and background
   )
   
@@ -300,22 +295,34 @@ derm_seasonal
 ```{r mixed effects model derm season}
 richness_derm
 
-mod1_season_derm<-glmer(InvSimpson~Season + (1 |Region), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+mod1_season_derm<-glm(InvSimpson~Season, data = richness_derm, family = Gamma(link = "log"))
 
-mod2_year_derm<-glmer(InvSimpson~Year + (1 |Region), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+mod2_region_derm<-glm(InvSimpson~Region, data = richness_derm, family = Gamma(link = "log"))
 
-mod3_seasonyear_derm<- glmer(InvSimpson~Season*Year + (1 | Region ), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+mod3_seasonregion_derm<-glm(InvSimpson~Season*Region, data = richness_derm, family = Gamma(link = "log"))
 
-mod4_nullseason_derm<- glmer(InvSimpson~ 1 + (1 | Region ), data = richness_derm, na.action = "na.fail", family=Gamma(link = "log"))
+mod4_nullseason_derm<- glm(InvSimpson~1, data = richness_derm, family = Gamma(link = "log"))
 
+sim_res_derm <- simulateResiduals(mod3_seasonregion_derm)
+plot(sim_res_derm)
+plot(mod3_seasonregion_derm)
 
-#boundary (singular) fit: see help('isSingular') warning for all
 
 #comparing all 4 models
-derm_sel<-model.sel(mod1_season_derm, mod2_year_derm, mod3_seasonyear_derm, mod4_nullseason_derm, rank = "AICc", beta = "sd")
+derm_sel<-model.sel(mod1_season_derm, mod2_region_derm, mod3_seasonregion_derm, mod4_nullseason_derm, rank = "AICc", beta = "sd")
 
 derm_sel
 
+#Check R2 fit of the models
+library(performance)
+
+r2(mod1_season_derm)
+r2(mod3_seasonregion_derm)
+r2(mod4_nullseason_derm)
+r2(mod2_region_derm)
+
+
+#save model selection results as a data frame
 derm_sel_df <- as.data.frame(derm_sel) %>%
   rownames_to_column(var = "derm_sel") %>%  # optional: make model names a column
   select(derm_sel, df, logLik, AICc, delta, weight)  # pick columns you want
@@ -329,13 +336,6 @@ ft_season_derm <- flextable(derm_sel_df) %>%
 doc_season_derm <- read_docx()
 doc_season_derm<- body_add_flextable(doc_season_derm, ft_season_derm)
 print(doc_season_derm, target = "season_derm_table.docx")
-
-
-#calculate R2 (marginal and conditional for each model)
-r.squaredGLMM(mod1_season_derm)
-r.squaredGLMM(mod2_year_derm)
-r.squaredGLMM(mod3_seasonyear_derm)
-r.squaredGLMM(mod4_nullseason_derm)
 
 ```
 
@@ -367,16 +367,17 @@ pis_seasonal<- richness_pis %>%
                values_to = "value") %>%
   ggplot(aes(x = Season, y = value, color = Season, fill = Season)) +
   geom_boxplot(alpha=0.4, outlier.shape = NA) +
- geom_jitter(aes(shape = Region), height = 0, width = .2, alpha = 0.3) +
+ geom_jitter(aes(shape = Year), height = 0, width = .2, alpha = 0.3) +
   labs(x = NULL, y = "Inv. Simpson") +
     scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
   scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
-  scale_shape_manual(values = c(8, 15)) +
+  #scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
-  facet_wrap(~Year, ncol=4) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1)) + 
+  facet_wrap(~Region, ncol=1, axes="all_x")  + 
   guides(color = "none", fill = "none") +
   ggtitle("P. ochraceus") + theme(plot.title = element_text(size = 10, face = "italic")) +
+  theme(strip.background = element_blank())
+        
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   theme(strip.background = element_blank() # This removes the box and background
   )
@@ -389,11 +390,11 @@ seawater_seasonal
 #combining all 3 hosts for alpha diversity
   library(ggpubr)
 
-season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("A", "B", "C"))
+season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=3, align = "v", legend = "right", labels = c("A", "B", "C"))
 
 season_panel
 
-ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=8, units="in")
+ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=6, units="in")
 ```
 
 
@@ -401,20 +402,32 @@ ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=8, uni
 
 richness_pis
 
-mod1_season_pis<-glmer(InvSimpson~Season + (1 | Region), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+mod1_season_pis<-glm(InvSimpson~Season, data = richness_pis, family = Gamma(link = "log"))
 
-mod2_year_pis<-glmer(InvSimpson~Year + (1 | Region), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+mod2_region_pis<-glm(InvSimpson~Region, data = richness_pis, family = Gamma(link = "log"))
 
-mod3_seasonyear_pis<- glmer(InvSimpson~Season*Year + (1 | Region ), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+mod3_seasonregion_pis<-glm(InvSimpson~Season*Region, data = richness_pis, family = Gamma(link = "log"))
 
-mod4_nullseason_pis<- glmer(InvSimpson~ 1 + (1 | Region), data = richness_pis, na.action = "na.fail", family=Gamma(link = "log"))
+mod4_nullseason_pis<-glm(InvSimpson~1, data = richness_pis, family = Gamma(link = "log"))
 
+sim_res_pis <- simulateResiduals(mod3_seasonregion_pis)
+plot(sim_res_pis)
+plot(mod3_seasonregion_pis)
 
 #comparing all 4 models
-pis_sel<-model.sel(mod1_season_pis, mod2_year_pis, mod3_seasonyear_pis, mod4_nullseason_pis, rank = "AICc", beta = "sd")
+pis_sel<-model.sel(mod1_season_pis, mod2_region_pis, mod3_seasonregion_pis, mod4_nullseason_pis, rank = "AICc", beta = "sd")
 
 pis_sel
 
+#Check R2 fit of the models
+library(performance)
+
+r2(mod3_seasonregion_pis)
+r2(mod2_region_pis)
+r2(mod1_season_pis)
+r2(mod4_nullseason_derm)
+
+#save model selection results in a dataframe
 pis_sel_df <- as.data.frame(pis_sel) %>%
   rownames_to_column(var = "pis_sel") %>%  # optional: make model names a column
   select(pis_sel, df, logLik, AICc, delta, weight)  # pick columns you want
@@ -430,25 +443,16 @@ doc_season_pis <- body_add_flextable(doc_season_pis, ft_season_pis)
 print(doc_season_pis, target = "season_pis_table.docx")
 
 
-#calculate R2 (marginal and conditional for each model)
-r.squaredGLMM(mod1_season_pis)
-r.squaredGLMM(mod2_year_pis)
-r.squaredGLMM(mod3_seasonyear_pis)
-r.squaredGLMM(mod4_nullseason_pis)
-
 ```
 
 
-##### WASTING LEVELS ALPHA DIVERSITY ######
+##### PISASTER WASTING ALPHA DIVERSITY ######
 
 ```{r alpha diversity by wasting score, Pisaster}
 
 pisaster_all <- ps_filter(
   decontam_filter_nonegs,
   (Host == "Pisaster ochraceus"))
-
-
-sample_data(pisaster_all)
 
 richness_wasting <- data.frame(
   "InvSimpson" = phyloseq::estimate_richness(pisaster_all, measures = "InvSimpson"), 
@@ -459,7 +463,7 @@ richness_wasting <- data.frame(
   "Year" = phyloseq::sample_data(pisaster_all)$Year)
 
 
-#Inverse simpson index by host
+#Inverse simpson index by wasting cat
 richness_wasting_plot<-richness_wasting %>%
   pivot_longer(cols = "InvSimpson",
                names_to = "metric",
@@ -486,27 +490,38 @@ richness_wasting_plot
 ```{r mixed effects model pisaster wasting score}
 richness_wasting
 
+mod1_wasting_pisw<-glm(InvSimpson~WastingCategory, data = richness_wasting, family = Gamma(link = "log"))
 
-mod1_wastingcat<-glmer(InvSimpson~WastingCategory + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+mod2_region_pisw<-glm(InvSimpson~Region, data = richness_wasting, family = Gamma(link = "log"))
 
-mod2_year_only<-glmer(InvSimpson~Year + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+mod3_wastingregion_pisw<-glm(InvSimpson~WastingCategory*Region, data = richness_wasting, family = Gamma(link = "log"))
 
-mod3_wastingyear<- glmer(InvSimpson~WastingCategory*Year + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
+mod4_null_pisw<-glm(InvSimpson~1, data = richness_wasting, family = Gamma(link = "log"))
 
-mod4_null_wasting<- glmer(InvSimpson~ 1 + (1 | Region), data = richness_wasting, na.action = "na.fail", family=Gamma(link = "log"))
-
+sim_res_pisw <- simulateResiduals(mod3_wastingregion_pisw)
+plot(sim_res_pis)
+plot(mod3_wastingregion_pisw)
 
 #comparing all 4 models
-wasting_sel<-model.sel(mod1_wastingcat, mod2_year_only, mod3_wastingyear, mod4_null_wasting, rank = "AICc", beta = "sd")
+pis_sel_wasting<-model.sel(mod1_wasting_pisw, mod2_region_pisw, mod3_wastingregion_pisw, mod4_null_pisw, rank = "AICc", beta = "sd")
 
-wasting_sel
+pis_sel_wasting
 
-wasting_sel_df <- as.data.frame(wasting_sel) %>%
-  rownames_to_column(var = "wasting_sel") %>%  # optional: make model names a column
-  select(wasting_sel, df, logLik, AICc, delta, weight)  # pick columns you want
+#Check R2 fit of the models
+library(performance)
+
+r2(mod2_region_pisw)
+r2(mod3_wastingregion_pisw)
+r2(mod1_wasting_pisw)
+r2(mod4_null_pisw)
+
+#save model selection results in a dataframe
+pis_sel_wasting_df <- as.data.frame(pis_sel_wasting) %>%
+  rownames_to_column(var = "pis_sel_wasting") %>%  # optional: make model names a column
+  select(pis_sel_wasting, df, logLik, AICc, delta, weight)  # pick columns you want
 
 # Make a Word-ready table
-ft_wasting_pis <- flextable(wasting_sel_df) %>%
+ft_wasting_pis <- flextable(pis_sel_wasting_df) %>%
   autofit() %>%
   theme_vanilla()  # simple clean style
 
@@ -514,15 +529,6 @@ ft_wasting_pis <- flextable(wasting_sel_df) %>%
 doc_wasting_pis <- read_docx()
 doc_wasting_pis <- body_add_flextable(doc_wasting_pis, ft_wasting_pis)
 print(doc_wasting_pis, target = "wasting_pis_table.docx")
-
-#calculate R2 (marginal and conditional for each model)
-r.squaredGLMM(mod1_wastingcat)
-r.squaredGLMM(mod2_year_only)
-r.squaredGLMM(mod3_wastingyear)
-r.squaredGLMM(mod4_null_wasting)
-
-
-packageVersion("indicspecies")
 
 
 ```
@@ -560,7 +566,7 @@ richness_wastingcat<-richness_wasting %>%
   scale_fill_manual(values = c("lightseagreen", "mediumorchid1", "mediumorchid4"), name = "Wasting Category") +
   theme_classic() +
   theme(legend.position="right") +
-  guides(color = "none") +
+  guides(color = "none", fill = "none") +
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 12, face = "bold"))
   #ggtitle("Pisaster ochraceous") + theme(plot.title = element_text(size = 10, face = "italic"))
@@ -586,7 +592,7 @@ richness_tissuetype<-richness_wasting %>%
   theme_classic() +
   scale_x_discrete(labels = c("AsympH", "WastingNL", "WastingL")) +
   theme(legend.position="right") +
-  guides(color = "none") +
+  guides(color = "none", fill = "none") +
   theme(strip.background = element_blank()) +
   theme(strip.text = element_text(size = 0, face = "bold"))
 
