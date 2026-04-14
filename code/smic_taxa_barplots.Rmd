@@ -140,7 +140,10 @@ tissuetype_region<-ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
     legend.position = "right"
   ) + scale_fill_brewer(palette = "Spectral") +
   facet_grid(~SiteType) + theme(strip.background = element_blank()) +
-   theme(strip.text = element_text(size = 12, face = "bold"))
+  theme(strip.text = element_text(size = 10, face = "bold")) +
+  theme(legend.text = element_text(size = 8)) + 
+  theme(legend.key.height = unit(0.3, "cm")) + 
+  theme(legend.key.width = unit(0.3, "cm"))
 
 tissuetype_region
 
