@@ -182,13 +182,15 @@ seawater_seasonal<-richness_seawater %>%
   #scale_shape_manual(values = c(8, 15)) +
   theme_classic() + 
   #theme(axis.text.x = element_blank()) +
-  facet_wrap(~Region, ncol=1) +
+  facet_wrap(~Region, ncol=1, axes="all_x") +
   scale_y_continuous(limits = c(0, 200)) +
   guides(color = "none", fill = "none") +
   ggtitle("Seawater") + theme(plot.title = element_text(size = 10)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-   theme(strip.background = element_blank() # This removes the box and background
+  theme(strip.background = element_blank() # This removes the box and background
   )
+
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  
 
 #could also facet by region instead of using shapes
 
@@ -280,12 +282,11 @@ derm_seasonal<- richness_derm %>%
   scale_fill_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
   #scale_shape_manual(values = c(8, 15)) +
   theme_classic() +
-  facet_wrap(~Region, ncol=1)  + 
+  facet_wrap(~Region, ncol=1, axes="all_x")  + 
   guides(color = "none", fill = "none") +
+  theme(strip.background = element_blank() # This removes the box and background
+  ) +
   ggtitle("D. imbricata") + theme(plot.title = element_text(size = 10, face = "italic"))
-  #theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-   theme(strip.background = element_blank() # This removes the box and background
-  )
   
 derm_seasonal
 
@@ -390,9 +391,9 @@ seawater_seasonal
 #combining all 3 hosts for alpha diversity
   library(ggpubr)
 
-season_panel<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=3, align = "v", legend = "right", labels = c("A", "B", "C"))
+season_panel_alpha<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, common.legend=TRUE, ncol=3, align = "v", legend = "right", labels = c("A", "B", "C"))
 
-season_panel
+season_panel_alpha
 
 ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=6, units="in")
 ```
