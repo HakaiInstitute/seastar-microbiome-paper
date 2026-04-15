@@ -32,7 +32,6 @@ pis_gen <- smicpf %>%
   subset_samples(Host == "Pisaster ochraceus")
 
 pis_genm <- speedyseq::psmelt(pis_gen)
- pis_genm
 
 #### get top genera ####
 top_12g <- tax_top(pis_gen, n = 12, rank = "Genus")
@@ -44,8 +43,6 @@ top_50g
 ```
 
 ## Run wilcoxon test to compare means
-
-I went with 0.01 because BH is a more permissive multiple test correction. with holm @ 0.05, only 11/50 genera were significantly different. but with BH at 0.05, 36/50 were sig different and in some cases, they had minimal log2FC, with 0.01 it seems like it is a nice compromise, with 22/50 top genera showing significant differences that looks visibly different too. this can obviously be changed!
 
 ```{R run wilcoxon test}
 #### stats — wilcox with BH correction ####
@@ -93,6 +90,8 @@ siggenera_to_plot <- pis_genm %>%
   mutate(WastingCategory = factor(WastingCategory, 
                                   levels = c("Healthy", "Mild", "Severe")))
 
+
+siggenera_to_plot
 
 ```
 
@@ -227,7 +226,7 @@ stats_results_summary <- stats_results_category %>%
 SMIC_siggenera_WC_log2FC_sig<-left_join(SMIC_siggenera_WC_log2FC.long,stats_results_summary)
 
 SMIC_siggenera_WC_log2FC_sig
-#write.csv(SMIC_siggenera_WC_log2FC_sig, file = "SMIC_siggenera_wastingcat_sig.csv", row.names = FALSE)
+write.csv(SMIC_siggenera_WC_log2FC_sig, file = "SMIC_siggenera_wastingcat_sig.csv", row.names = FALSE)
 
 #### lollipop plots with significance ####
 
@@ -300,17 +299,17 @@ wastingcat_region
 #want the logfold change plot to be larger along the left side and the other two stacked on the right
 
 # 1. Create the sub-grid for the second column (2 plots stacked vertically)
-col2 <- ggarrange(wastingcat_pcoa_region, wastingcat_region, nrow = 2, labels = c("B", "C"), heights = c(1.25, 1))
+col2 <- ggarrange(wastingcat_pcoa_region, wastingcat_region, labels = c("B", "C"), heights = c(1, 1), ncol=1, nrow=2)
 
 col2
 
 # 2. Combine the first plot with the new sub-grid (1 plot in col 1, sub-grid in col 2)
-wasting_panel_fig5<-ggarrange(logchange_category, col2,
-                              ncol = 2, labels = c("A", "", ""))
+wasting_panel<-ggarrange(logchange_category, col2,
+                              ncol = 2, labels = c("A", "", ""), widths = c(1, 1.1))
 
-wasting_panel_fig5
+wasting_panel
 
-ggsave(plot =wasting_panel_fig5, filename ="wasting_panel_fig5.jpeg", 
+ggsave(plot =wasting_panel, filename ="wasting_panel.jpeg", 
        dpi=300, width=12, height=6, units="in")
 
 ```
@@ -513,7 +512,9 @@ tissuetype_region
 #want the logfold change plot to be larger along the left side and the other two stacked on the right
 
 # 1. Create the sub-grid for the second column (2 plots stacked vertically)
-col2_supp <- ggarrange(tissuetype_pcoa_region, tissuetype_region, nrow = 2, labels = c("B", "C"), heights = c(1.25, 1))
+col2_supp <- ggarrange(tissuetype_pcoa_region, tissuetype_region, nrow = 2, labels = c("B", "C"), heights = c(1, 1))
+
+col2_supp
 
 
 # 2. Combine the first plot with the new sub-grid (1 plot in col 1, sub-grid in col 2)
@@ -543,81 +544,6 @@ ggsave("logchange_panel.jpeg", dpi=300, width=8, height=10, units="in")
 
 
 
-#### RUNNING THE SAME ANALYIS BUT WITH SEASON ####
-
-```{r}
-#### stats — wilcox with BH correction ####
-
-
-stats_results_season <- pis_genm %>%
-  filter(Genus %in% top_50g) %>%
-  group_by(Genus) %>%
-  wilcox_test(Abundance ~ Season) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj")
-
-
-sig_genera_season <- stats_results_season %>%
-  filter(p.adj < 0.01) %>% 
-  pull(Genus) %>%
-  unique()
-
-
-print(sig_genera_season)
-
-
-#### subset significant genera ####
-siggenera_to_plot_season <- pis_genm %>%
-  filter(Genus %in% sig_genera_season) %>%
-  mutate(Season = factor(Season, 
-                                  levels = c("Winter", "Spring", "Summer", "Fall")))
-
-```
-
-```{r}
-
-season_boxplot <- ggboxplot(
-    siggenera_to_plot_season,
-    y = "Abundance",
-    x = "Season",
-    fill = "Season",
-    lwd = 0.3,
-    alpha = 0.7
-  ) +
-  geom_pwc(
-    aes(group = Season),
-    tip.length = 0.01,
-    method = "wilcox_test",
-    p.adjust.method = "BH",
-    p.adjust.by = "group",
-    label = "p.adj.signif",         # or "p.adj" for numeric values
-    step.increase = 0.1,
-    size = 0.2,
-    label.size = 3,
-    vjust = 0.75,
-    hide.ns = TRUE
-  ) +
-  #scale_fill_manual(
-    #values = c("olivedrab", "deepskyblue", "deepskyblue4"),
-    #name = "Tissue Type") +
-  scale_y_sqrt() +
-  # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1),    
-  facet_wrap(Genus ~., nrow = 4,) +
-  theme_bw() +
-  theme(
-    axis.text.x     = element_blank(),
-    axis.title.x    = element_blank(),
-    legend.position = "bottom",
-    strip.placement = "outside",
-    strip.text = element_text(size = 6),
-    strip.text.x.bottom = element_text(angle = 90, hjust = 1, size = 8),
-    strip.background = element_blank(),
-    panel.grid.minor = element_blank()
-  ) +
-  ylab("Relative Abundance")
-
-season_boxplot
-```
 
 
 
