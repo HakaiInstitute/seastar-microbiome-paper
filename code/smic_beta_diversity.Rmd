@@ -78,7 +78,8 @@ fig2<-ggarrange(alpha_plot, pcoa_sampletype, legend = "right", labels = c("A", "
 
 fig2
 
-ggsave("fig2.jpeg", dpi=300, width=9, height=8, units="in")
+ggsave(plot = fig2, filename = file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures", "fig2.jpeg"), dpi=300, width=9, height=8, units="in", )
+
 
 ```
 
@@ -337,18 +338,6 @@ permutest(beta_pis_season)
 anova(beta_pis_season)
 plot(beta_pis_season)
 
-
-#don't meet permanova assumptions so using anosim
-
-ano_pis_season <- anosim(dist_mat_pis, pis_df$Season, permutations = 999)
-
-# 5. View results
-summary(ano_pis_season)
-plot(ano_pis_season)
-
-#combine all three hosts pcoa season plots
-ggarrange(seawater_season_ord, derm_season_ord, pis_season_ord, common.legend=TRUE, ncol=1, align = "v", legend = "right")
-
 ```
 
 
@@ -361,7 +350,228 @@ season_panel_beta
 
 season_alpha_beta<-ggarrange(season_panel_alpha, season_panel_beta, common.legend=TRUE, ncol=1, align = "v", legend = "right")
 
-ggsave(plot = season_alpha_beta, "season_alpha_beta.jpeg", dpi=300, width=9, height=8, units="in")
+ggsave(plot = season_alpha_beta,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","season_alpha_beta.jpeg"), dpi=300, width=9, height=8, units="in")
+
+```
+
+
+
+############ SEASONAL TRENDS IN BETA DIVERSITY WITHOUT or ONLY CORE TAXA #############
+
+```{R Derm beta diversity season NO CORE }
+# DERM
+
+derm_core<-c("Saprospiraceae Family","EC94", "Rhodobacteraceae Family","Flavobacteriaceae Family","Rubritalea")
+
+derm_norm_nocore <- ps_filter(healthy_all_b_norm,
+  (Host == "Dermasterias imbricata")) %>%
+  subset_taxa(!Genus %in% derm_core)
+
+derm.nocore.pcoa <- ordinate(derm_norm_nocore, method = "PCoA", distance = "bray")
+
+# Plot of healthy Derm across seasons
+derm_season_ord.nocore<-plot_ordination(
+  physeq = derm_norm_nocore,
+  ordination = derm.nocore.pcoa,
+  color = "Season",
+  shape = "Year") +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) + 
+  facet_wrap(~SiteType, axes = "all_x", ncol=1, scales="free") +
+  theme_classic() +
+  ggtitle("D. imbricata") + 
+  theme(plot.title = element_text(size = 10, face = "italic")) + theme(strip.background = element_blank()) # This removes the box and background
+
+
+derm_season_ord.nocore
+
+#using adonis to run a PERMANOVA by season within Derm, without core
+
+# make a data frame from the sample_data
+derm_df.nocore <- data.frame(sample_data(derm_norm_nocore))
+
+dist_mat_derm.nocore <- phyloseq::distance(derm_norm_nocore, method = "bray")
+
+# Permanova by season, Derm without core taxa
+adonis2(dist_mat_derm.nocore~Season, data = derm_df.nocore) #p = 0.001
+
+#beta dispersion test
+bd_derm_season.nocore<-betadisper(dist_mat_derm.nocore, derm_df.nocore$Season)
+anova(bd_derm_season.nocore) #p = 2.909e-05 
+
+plot(bd_derm_season.nocore)
+
+#don't meet permanova assumptions so using anosim
+
+ano_derm_season.nocore <- anosim(dist_mat_derm.nocore, derm_df.nocore$Season, permutations = 999)
+
+# 5. View results
+summary(ano_derm_season.nocore) 
+# ANOSIM statistic R: 0.05548 
+#       Significance: 0.002 
+plot(ano_derm_season.nocore)
+
+
+```
+
+```{R Derm beta diversity season ONLY CORE }
+# DERM
+
+derm_core<-c("Saprospiraceae Family","EC94", "Rhodobacteraceae Family","Flavobacteriaceae Family","Rubritalea")
+
+derm_norm_core <- ps_filter(healthy_all_b_norm,
+  (Host == "Dermasterias imbricata")) %>%
+  subset_taxa(Genus %in% derm_core)
+
+derm.core.pcoa <- ordinate(derm_norm_core, method = "PCoA", distance = "bray")
+
+# Plot of healthy Derm across seasons
+derm_season_ord.core<-plot_ordination(
+  physeq = derm_norm_core,
+  ordination = derm.core.pcoa,
+  color = "Season",
+  shape = "SiteType") +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) + 
+  facet_wrap(~SiteType, axes = "all_x", ncol=1, scales="free") +
+  theme_classic() +
+  ggtitle("D. imbricata") + 
+  theme(plot.title = element_text(size = 10, face = "italic")) + theme(strip.background = element_blank()) # This removes the box and background
+
+derm_season_ord.core
+
+#using adonis to run a PERMANOVA by season within Derm, without core
+
+# make a data frame from the sample_data
+derm_df.core <- data.frame(sample_data(derm_norm_core))
+
+dist_mat_derm.core <- phyloseq::distance(derm_norm_core, method = "bray")
+
+# Permanova by Host
+adonis2(dist_mat_derm.core~Season, data = derm_df.core) #p = 0.001
+
+#beta dispersion test
+bd_derm_season.core<-betadisper(dist_mat_derm.core, derm_df.core$Season)
+anova(bd_derm_season.core) #p = 0.0002842
+
+plot(bd_derm_season.core)
+
+ano_derm_season.core <- anosim(dist_mat_derm.core, derm_df.core$Season, permutations = 999)
+
+# 5. View results
+summary(ano_derm_season.core) 
+# ANOSIM statistic R: 0.00611 
+#       Significance: 0.367 
+plot(ano_derm_season.core)
+
+```
+
+
+```{R Pisaster beta diversity season NO CORE}
+#PISASTER
+
+pioc_core <-c("Roseibacillus","Polaribacter","Yoonia-Loktanella",       "Rubritalea","Saprospiraceae Family","Reichenbachiella",        "Endozoicomonas","Rhodobacteraceae Family","Spirochaetia Class", "Spirochaetaceae Family","Salinispira","Flavobacteriaceae Family")
+
+pioc_norm_nocore <- ps_filter(healthy_all_b_norm,
+  (Host == "Pisaster ochraceus")) %>%
+  subset_taxa(!Genus %in% pioc_core)
+
+# pis.nmds <- ordinate(pis_norm, method = "NMDS", distance = "bray")
+pioc.nocore.pcoa <- ordinate(pioc_norm_nocore, method = "PCoA", distance = "bray")
+
+# Plot of healthy Pisaster across seasons
+pioc_season_ord.nocore<-plot_ordination(
+  physeq = pioc_norm_nocore,
+  ordination = pioc.nocore.pcoa,
+  color = "Season",
+  shape = "SiteType") +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) + 
+  facet_wrap(~SiteType, axes = "all_x", ncol=1, scales="free") +
+  theme_classic() +
+  ggtitle("P. ochraceus") + 
+  theme(plot.title = element_text(size = 10, face = "italic")) + theme(strip.background = element_blank()) # This removes the box and background
+
+pioc_season_ord.nocore
+
+### permanova and anosim ###
+
+#using adonis to run a PERMANOVA by season within Derm, without core
+
+# make a data frame from the sample_data
+pioc_df.nocore <- data.frame(sample_data(pioc_norm_nocore))
+
+dist_mat_pioc.nocore <- phyloseq::distance(pioc_norm_nocore, method = "bray")
+
+# Permanova by Host
+adonis2(dist_mat_pioc.nocore~Season, data = pioc_df.nocore) #p = 0.001
+
+#beta dispersion test
+bd_pioc_season.nocore<-betadisper(dist_mat_pioc.nocore, pioc_df.nocore$Season)
+anova(bd_pioc_season.nocore) #p = 7.485e-06
+
+plot(bd_pioc_season.nocore)
+
+#don't meet permanova assumptions so using anosim
+
+ano_pioc_season.nocore <- anosim(dist_mat_pioc.nocore, pioc_df.nocore$Season, permutations = 999)
+
+# 5. View results
+summary(ano_pioc_season.nocore) 
+# ANOSIM statistic R: 0.1665 
+#       Significance: 0.001 
+plot(ano_pioc_season.nocore)
+
+```
+
+```{R Pisaster beta diversity season ONLY CORE}
+#PISASTER
+
+pioc_core <-c("Roseibacillus","Polaribacter","Yoonia-Loktanella",       "Rubritalea","Saprospiraceae Family","Reichenbachiella",        "Endozoicomonas","Rhodobacteraceae Family","Spirochaetia Class", "Spirochaetaceae Family","Salinispira","Flavobacteriaceae Family")
+
+pioc_norm_core <- ps_filter(healthy_all_b_norm,
+  (Host == "Pisaster ochraceus")) %>%
+  subset_taxa(Genus %in% pioc_core)
+
+# pis.nmds <- ordinate(pis_norm, method = "NMDS", distance = "bray")
+pioc.core.pcoa <- ordinate(pioc_norm_core, method = "PCoA", distance = "bray")
+
+# Plot of healthy Pisaster across seasons
+pioc_season_ord.core<-plot_ordination(
+  physeq = pioc_norm_core,
+  ordination = pioc.core.pcoa,
+  color = "Season",
+  shape = "SiteType") +
+  scale_color_manual(values=c("#FE5E41", "#00A896","#9DD9D2", "#05668D")) + 
+  facet_wrap(~SiteType, axes = "all_x", ncol=1, scales="free") +
+  theme_classic() +
+  ggtitle("P. ochraceus") + 
+  theme(plot.title = element_text(size = 10, face = "italic")) + theme(strip.background = element_blank()) # This removes the box and background
+
+pioc_season_ord.core
+
+### permanova and anosim ###
+
+#using adonis to run a PERMANOVA by season within Derm, without core
+
+# make a data frame from the sample_data
+pioc_df.core <- data.frame(sample_data(pioc_norm_core))
+
+dist_mat_pioc.core <- phyloseq::distance(pioc_norm_core, method = "bray")
+
+# Permanova by Host
+adonis2(dist_mat_pioc.core~Season, data = pioc_df.core) #p = 0.001
+
+#beta dispersion test
+bd_pioc_season.core<-betadisper(dist_mat_pioc.core, pioc_df.core$Season)
+anova(bd_pioc_season.core) #p = 7.485e-06
+
+plot(bd_pioc_season.core)
+
+ano_pioc_season.core <- anosim(dist_mat_pioc.core, pioc_df.core$Season, permutations = 999)
+
+# 5. View results
+summary(ano_pioc_season.core) 
+# ANOSIM statistic R: 0.1665 
+#       Significance: 0.001 
+plot(ano_pioc_season.core)
 
 ```
 
@@ -580,3 +790,39 @@ plot(bd_tissuetype_q)
 
 Same thing but for Calvert
 
+```{r}
+#using adonis to run a PERMANOVA by wasting cat, separately by region
+
+set.seed(1)
+
+# Calculate bray curtis distance matrix
+dist_mat_wasting_q <- phyloseq::distance(pisaster_quadra_norm, method = "bray")
+
+# make a data frame from the sample_data
+pis_df_wasting_q <- data.frame(sample_data(pisaster_quadra_norm))
+
+
+# Permanova by WASTING CAT, Quadra
+adonis2(dist_mat_wasting_q~ WastingCategory, data = pis_df_wasting_q)
+
+bd_wastingcat_quadra <- betadisper(dist_mat_wasting_q, pis_df_wasting_q$WastingCategory)
+anova(bd_wastingcat_quadra) #p = 0.003
+
+TukeyHSD(bd_wastingcat_quadra)
+
+plot(bd_wastingcat_quadra)
+
+
+
+####### and by SWAB TYPE, Quadra
+pis_df_wasting_q
+
+adonis2(dist_mat_wasting_q~ DermisType2, data = pis_df_wasting_q)
+
+#beta dispersion test
+bd_tissuetype_q<- betadisper(dist_mat_wasting_q, pis_df_wasting_q$DermisType2)
+anova(bd_tissuetype_q) # P =  0.009
+
+plot(bd_tissuetype_q)
+
+```
