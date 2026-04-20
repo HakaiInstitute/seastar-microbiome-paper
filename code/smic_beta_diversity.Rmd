@@ -657,7 +657,6 @@ pisaster_wastingcat_quadra <-plot_ordination(
 pisaster_wastingcat_quadra 
 
 
-table(sample_data(pisaster_diseased_calvert)$WastingCategory)
 
 #plotting by season within Pisaster on Calvert
 pisaster_wastingcat_calvert <-plot_ordination(
@@ -750,34 +749,33 @@ Now some stats for all three categories examined above
 set.seed(1)
 
 # Calculate bray curtis distance matrix
-dist_mat_wasting_q <- phyloseq::distance(pisaster_quadra_norm, method = "bray")
+dist_mat_wasting_c <- phyloseq::distance(pisaster_calvert_norm, method = "bray")
 
 # make a data frame from the sample_data
-pis_df_wasting_q <- data.frame(sample_data(pisaster_quadra_norm))
+pis_df_wasting_c <- data.frame(sample_data(pisaster_calvert_norm))
 
 
 # Permanova by WASTING CAT, Quadra
-adonis2(dist_mat_wasting_q~ WastingCategory, data = pis_df_wasting_q)
+adonis2(dist_mat_wasting_c~ WastingCategory, data = pis_df_wasting_c)
 
-bd_wastingcat_quadra <- betadisper(dist_mat_wasting_q, pis_df_wasting_q$WastingCategory)
-anova(bd_wastingcat_quadra) #p = 0.003
+bd_wastingcat_calvert <- betadisper(dist_mat_wasting_c, pis_df_wasting_c$WastingCategory)
+anova(bd_wastingcat_calvert) #p = 0.05052
 
-TukeyHSD(bd_wastingcat_quadra)
 
-plot(bd_wastingcat_quadra)
+plot(bd_wastingcat_calvert)
 
 
 
 ####### and by SWAB TYPE, Quadra
-pis_df_wasting_q
+pis_df_wasting_c
 
-adonis2(dist_mat_wasting_q~ DermisType2, data = pis_df_wasting_q)
+adonis2(dist_mat_wasting_c~ DermisType2, data = pis_df_wasting_c)
 
 #beta dispersion test
-bd_tissuetype_q<- betadisper(dist_mat_wasting_q, pis_df_wasting_q$DermisType2)
-anova(bd_tissuetype_q) # P =  0.009
+bd_tissuetype_c<- betadisper(dist_mat_wasting_c, pis_df_wasting_c$DermisType2)
+anova(bd_tissuetype_c) # P =  0.009
 
-plot(bd_tissuetype_q)
+plot(bd_tissuetype_c)
 
 
 
