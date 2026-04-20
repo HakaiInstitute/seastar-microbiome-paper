@@ -43,7 +43,6 @@ seawater  <- ps_filter(
 ```
 
 
-
 ##### CORE MICROBIOME ANALYSIS FOR EACH HOST/ENVIRONMENT #####
 
 ```{r core microbiome PISASTER HEALTHY}
@@ -80,7 +79,7 @@ df_core_pisaster
 unique(df_core_pisaster$Core)
 df_core_pisaster$Core = factor(df_core_pisaster$Core, levels = c("Spirochaetia Class","Spirochaetaceae Family", "Salinispira", "Rhodobacteraceae Family", "Yoonia-Loktanella", "Flavobacteriaceae Family", "Polaribacter", "Saprospiraceae Family", "Endozoicomonas","Reichenbachiella","Roseibacillus","Rubritalea","Other" ))                        
 
- write.csv(df_core_pisaster, "df_core_pisaster.csv")
+ #write.csv(df_core_pisaster, "df_core_pisaster.csv")
 
 # Plot everything
 
@@ -191,13 +190,14 @@ core_levels <- c(
 df_core_derm$Core <- factor(df_core_derm$Core, levels = core_levels)
 df_core_pisaster$Core <- factor(df_core_pisaster$Core, levels = core_levels)
 
-
+library(ggpubr)
 ggarrange(pis_core_plot, derm_core_plot, ncol=1, common.legend=TRUE, align = "v", legend = "right", labels = c("a", "b"))
 
 
 ```
 
-And seawater
+
+And seawater core taxa, out of interest
 
 ```{r}
 #first need to transform the data
@@ -232,7 +232,6 @@ unique(df_core_seawater$Core)
 ```
 
 
-
 If we wanted to do a venn diagram to compare the core taxa between sea stars
 
 ```{r}
@@ -265,139 +264,5 @@ all_three <- Reduce(intersect, list(Derm, Pioc, Seawater))
 
 all_three
 
-
-#Could also incoporate the indicator taxa here
-
-
-
-venn2 <- list(
-  Derm = derm_indicators,
-  Pioc = pioc_indicators, 
-  Seawater = seawater_indicators=)
-
-ggVennDiagram(venn2, label = "count") +
-  scale_fill_gradient(low = "white", high = "mediumorchid1")
-
-
-derm_indicators <- list("Bdellovibrio", "EC94", "Peredibacter", "Rhodobacteraceae Family", "Thiothrix")
-
-pioc_indicators <- list("Candidatus_Hepatoplasma", "Endozoicomonas", "Gracilibacteria", "Psychroflexus", "Reichenbachiella", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class")
-
-library(datapasta)
-seawater_indicators <- list("AEGEAN-169_marine_group", "Amylibacter", "Ascidiaceihabitans", "BD1-7_clade", "Candidatus_Actinomarina", "Candidatus_Aquiluna", "Candidatus_Nitrosopumilus", "Candidatus_Puniceispirillum", "CL500-3", "Clade_Ia", "Clade_II", "Clade_III", "Clade_IV", "Cryomorphaceae Family", "Defluviicoccales Order", "Ectothiorhodospiraceae Family", "Flavicella", "Fluviicola", "Formosa", "Ga0077536", "HOC36", "IS-44", "KI89A_clade", "Kordiimonadales Order", "Lentimonas", "Luminiphilus", "Magnetospira", "Magnetospiraceae Family", "Marine_Group_II", "Marinifilaceae Family", "Marinimicrobia_(SAR406_clade)", "Marinoscillum", "MB11C04_marine_group", "Nitrincolaceae Family", "Nitrosomonas", "Nitrosopumilaceae Family", "NS10_marine_group", "NS11-12_marine_group", "NS2b_marine_group", "NS3a_marine_group", "NS4_marine_group", "NS5_marine_group", "NS7_marine_group", "NS9_marine_group", "OCS116_clade", "OM182_clade", "OM43_clade", "OM60(NOR5)_clade", "OM75_clade", "Pelagicoccus", "Pirellulaceae Family", "Planktomarina", "Porticoccus", "PS1_clade", "Pseudohongiella", "Puniceispirillales Order", "RS62_marine_group", "SAR116_clade", "SAR324_clade(Marine_group_B)", "SAR86_clade", "SAR92_clade", "SCGC_AAA164-E04", "Spongiibacteraceae Family", "Stappiaceae", "SUP05_cluster", "Synechococcus_CC9902", "Thiotrichaceae Family")
-
-seawater_indicators
-
-derm_core <-list("EC94", "Flavobacteriaceae Family", "Saprospiraceae Family", "Rhodobacteraceae Family", "Rubritalea")
-
-pioc_core <- list("Endozoicomonas", "Flavobacteriaceae Family", "Polaribacter", "Reichenbachiella", "Rhodobacteraceae Family", "Salinispira", "Spirochaetaceae Family", "Spirochaetia Class", "Roseibacillus", "Rubritalea", "Saprospiraceae Family","Yoonia-Loktanella")
-
-
-
-
-
-pisaster_indicator <- as.character(unlist(pioc_indicators))
-pisaster_core      <- as.character(unlist(pioc_core))
-dermasterias_indicator <- as.character(unlist(derm_indicators))
-dermasterias_core      <- as.character(unlist(derm_core))
-
-pisaster_indicator <- unique(na.omit(pisaster_indicator))
-pisaster_core      <- unique(na.omit(pisaster_core))
-dermasterias_indicator <- unique(na.omit(dermasterias_indicator))
-dermasterias_core      <- unique(na.omit(dermasterias_core))
-
-
-venn_core_ind <- list(
-  Derm_core = derm_taxa_list,
-  Pioc_core = pioc_taxa_list,
-  Derm_ind = derm_indicators,
-  Pioc_ind = pioc_indicators
-)
-
-
-str(pisaster_indicator)
-str(pisaster_core)
-str(dermasterias_indicator)
-str(dermasterias_core)
-
-library(VennDiagram)
-
-install.packages("VennDiagram")
-library(VennDiagram)
-library(grid)
-
-venn.plot <- venn.diagram(
-  x = list(
-    Pisaster_Indicator = pisaster_indicator,
-    Pisaster_Core = pisaster_core,
-    Dermasterias_Indicator = dermasterias_indicator,
-    Dermasterias_Core = dermasterias_core
-  ),
-  filename = NULL,
-  fill = c("red", "blue", "green", "purple"),
-  alpha = 0.5,
-  cex = 1.5,
-  cat.cex = 1.2
-)
-
-grid.draw(venn.plot)
-
-
-library(UpSetR)
-
-# Combine all taxa
-all_taxa <- unique(c(pisaster_indicator,
-                     pisaster_core,
-                     dermasterias_indicator,
-                     dermasterias_core))
-
-# Create a presence/absence numeric data frame (0/1 instead of TRUE/FALSE)
-df_upset <- data.frame(
-  pisaster_indicator = as.integer(all_taxa %in% pisaster_indicator),
-  pisaster_core = as.integer(all_taxa %in% pisaster_core),
-  dermasterias_indicator = as.integer(all_taxa %in% dermasterias_indicator),
-  dermasterias_core = as.integer(all_taxa %in% dermasterias_core)
-)
-
-# Add taxa names as rownames (optional, for tracing)
-rownames(df_upset) <- all_taxa
-
-df_upset
-
-upset(df_upset, 
-      sets = c("pisaster_indicator", "pisaster_core", 
-               "dermasterias_indicator", "dermasterias_core"),
-      order.by = "freq")
-
-library(eulerr)
-
-taxa_lists <- list(
-  pisaster_indicator = pisaster_indicator,
-  pisaster_core = pisaster_core,
-  dermasterias_indicator = dermasterias_indicator,
-  dermasterias_core = dermasterias_core
-)
-
-fit <- euler(taxa_lists)
-
-library(scales)
-colors <- grey(rescale(overlap_sizes, to = c(0.8, 0.3)))  # bigger overlaps = darker
-
-
-plot(fit,
-     fills = list(
-       fill = colors,   # color by overlap size
-       alpha = 0.6      # slightly transparent
-     ),
-     edges = TRUE,       # show circle edges
-     quantities = TRUE,  # show counts
-     labels = list(font = 2, cex = 1), # bold labels
-     main = "Euler Diagram of 4 Taxa Lists with Overlap Coloring"
-)
-
-dev.off()
-
 ```
-
-
 
