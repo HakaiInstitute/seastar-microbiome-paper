@@ -1,1 +1,76 @@
-variable,long_name,units,standard_name,comment
+table,variable,category,units,description
+field_data_all,region,character,NA,Region of British Columbia where the survey was performed. Calvert Island or Quadra Island
+field_data_all,date,date,yyyy-mm-dd,Date on which the survey was conducted
+field_data_all,site,character,NA,Rocky intertidal site where survey was conducted
+field_data_all,observer,character,NA,The individual(s) who conducted the survey
+field_data_all,start_time,date,00(hr):00(m),The time (24hr clock) when the survey was begun
+field_data_all,end_time,date,00(hr):00(m),The time (24hr clock) when the survey was completed
+field_data_all,tide_height_at_sampling_time,numeric,m,The tide height at the time the survey was started
+field_data_all,effective_tide_height,numeric,m,The effective tide height at the time the survey was started (due to swell and wind)
+field_data_all,life_stage,character,NA,Life stage category (adult/juvenile) for observed Pisaster ochraceus
+field_data_all,scientific_name,character,NA,Taxonomic name for a given taxon code
+field_data_all,description,character,NA,"Common vernacular description of what a given code represents (i.e. acorn barnacle, dead acorn barnacle)"
+field_data_all,disease_status,character,NA,"Category 0-4 (healthy-dissolved), reflecting healthiness or stage of wasting disease"
+field_data_all,size_class,numeric,mm,"Size category of radius (sea stars), total length (abalone & Cryptochiton stelleri), or test width (sea urchins)"
+field_data_all,count,numeric,NA,The number of individuals of a given size category in the swath
+field_data_all,entered_by,character,NA,The individual(s) who entered the data into the spreadsheet
+field_data_all,checked_by,character,NA,The individual(s) who quality controlled the data
+field_data_all,notes,character,NA,Records anything of note about a given observation
+field_data_all,status,character,NA,Status of the data in terms of data package progress
+field_data_all,unit_area_2D,numeric,m squared,"Area searched in two dimensions, calculated from ROV imagery "
+field_data_all,unit_area_3D,numeric,m cubed,"Area searched in three dimensions (i.e. including all cracks and crevices), calculated from ROV imagery "
+field_data_all,month,numeric,NA,"Month of the year, extracted from the date column"
+field_data_all,year,numeric,NA,"Year, extracted from the date column"
+field_data_all,year_month,numeric,NA,"Year and month, extracted from the date column"
+metadata_updated_2026,SampleID,character,NA,Swab sample ID
+metadata_updated_2026,SampleIDR,character,NA,"Swab sample ID, updated to match metadata entry in some cases so VLOOKUP would work correctly"
+metadata_updated_2026,SampleType,character,NA,Specifies either swab or seawater sample
+metadata_updated_2026,SampleNeg,character,NA,Specifies either sample or negative control
+metadata_updated_2026,SampleOrNeg,character,NA,"Specifies sample, extraction negative or PCR negative"
+metadata_updated_2026,SampleType2,character,NA,"Combines SampleType and SampleOrNeg columns, e.g. SwabSample, SeawaterExtNeg"
+metadata_updated_2026,SwabType,character,NA,"The type of swab used to collect the sample, either cotton or flocked"
+metadata_updated_2026,ExtractionDate,date,yyyy-mm-dd,Date on which DNA was extracted from the sample
+metadata_updated_2026,ExtractionStaff,character,NA,Who performed the DNA extraction
+metadata_updated_2026,ExtractionKit,character,NA,The name of the kit used for the DNA extraction
+metadata_updated_2026,DNAConc (ng/ul),numeric,ng/ul,The amount of DNA detected in a particular sample
+metadata_updated_2026,ElutionVolume (uL),numeric,ul,The final elution volume used in the DNA extraction
+metadata_updated_2026,Notes,character,NA,Anything noteworthy related to the sample during DNA extraction or sequencing
+metadata_updated_2026,DNA.Plate,character,NA,The associated DNA plate for a particular sample
+metadata_updated_2026,Well,character,NA,The associated DNA well for a particular sample
+metadata_updated_2026,SequencingRun,character,NA,The associated sequencing run for a particular sample
+metadata_updated_2026,TidalZone,character,NA,"Either intertidal or subtidal, indicating the type of survey which the swab was associated with"
+metadata_updated_2026,SubstrateDepth,character,NA,The substrate on which the host was living when the sample was collected
+metadata_updated_2026,Host,character,NA,"The host from which the swab sample was collected; usually a sea star species, but seawater also included here"
+metadata_updated_2026,Radiusmm,numeric,mm,The distance from the center of the sea star to the tip of it's longest arm
+metadata_updated_2026,Project,character,NA,The associated project for a particular swab sample
+metadata_updated_2026,SiteType,character,NA,"The region from which the swab was collected, either Calvert or Quadra"
+metadata_updated_2026,LocationType,character,NA,"The location from which the swab was collected, either Quadra, Outer Islands or Fjord"
+metadata_updated_2026,SiteID,character,NA,"The standardized site ID for a particular field site using a ROCKY prefix, e.g. ROCKY12"
+metadata_updated_2026,Site,character,NA,The actual site name e.g. annex
+metadata_updated_2026,Date,date,yyyy-mm-dd,Date on which the swab was collected
+metadata_updated_2026,Year,numeric,NA,"Month of the year, extracted from the date column"
+metadata_updated_2026,Month,numeric,NA,"Year, extracted from the date column"
+metadata_updated_2026,YearMonth,numeric,NA,"Year and month, extracted from the date column"
+metadata_updated_2026,Day,numeric,NA,"Day, extracted from the date column"
+metadata_updated_2026,DayOfYear,numeric,NA,Day of the year expressed as a number between 1 and 365
+metadata_updated_2026,WastingScore,character,NA,"Category 0-4 (healthy-dissolved), reflecting healthiness or stage of wasting disease"
+metadata_updated_2026,WastingCategory,character,NA,"One of healthy (wasting score = 0), mild (wasting score 1 or 2) or severe (wasting score 3 or 4)"
+metadata_updated_2026,DermisType,character,NA,"The type of tissue swabbed, either H for healthy or L for lesion"
+metadata_updated_2026,SSWD,numeric,NA,"A unique ID assigned to each individual sea star - some individuals might have just 1 associated swab (H), while others have two (H + L)"
+metadata_updated_2026,Sterivex,character,NA,"The seawater sterivex ID associated with a particular swab, prefix of CMIC for Calvert samples and QMIC for Quadra samples"
+metadata_updated_2026,PCRcycles,numeric,NA,The number of PCR cycles used in the amplication step
+metadata_updated_2026,LifeStage,character,NA,"Life stage category (adult/juvenile) based on radius measurement, where 30mm and less assumed to be juvenile and above 30mm assumed to be adult"
+metadata_updated_2026,Sequenced?,character,NA,"Yes or No, based on whether a sample made it to the DNA sequencing step"
+metadata_updated_2026,ReadCount,numeric,NA,The number of sequence reads corresponding to that sample
+metadata_updated_2026,Season,character,NA,"Season category based on months, where 1 and 2 = Winter, 5 = Spring, 6, 7 and 8 = Summer and 9, 11 and 12 = Fall"
+metadata_updated_2026,Disease_Status_Star,character,NA,Whether or not the individual star is healthy (category 0) or diseased (categories 1-4)
+metadata_updated_2026,DermisType2,character,NA,"The combination of individual sea star disease status and type of tissue swab - one of H_healthy, H_diseased or L_diseased"
+smic_runs1to8_silva138-1_taxonomy,ASVID,character,NA,The unique ASV ID which matches those in the ASV table (asvtable_NCM_smiconly-runs1to8)
+smic_runs1to8_silva138-1_taxonomy,Domain,character,NA,The domain to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Phylum,character,NA,The phylum to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Class,character,NA,The class to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Order,character,NA,The order to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Family,character,NA,The family to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Genus,character,NA,The genus to which the ASV was assigned
+smic_runs1to8_silva138-1_taxonomy,Species,character,NA,The species to which the ASV was assigned
+asvtable_NCM_smiconly-runs1to8,NA,NA,NA,The number of reads of each ASV ID (rows) for each sample (columns). Sample IDs match those in the metadata file
