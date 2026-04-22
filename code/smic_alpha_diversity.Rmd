@@ -395,7 +395,14 @@ season_panel_alpha<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, co
 
 season_panel_alpha
 
-ggsave(plot = season_panel, "season_panel.jpeg", dpi=300, width=9, height=6, units="in")
+#save panel to combine with beta diversity seasonal plot
+saveRDS(season_panel_alpha, file = "season_panel_alpha.rds")
+
+#saving locally to computer
+ggsave(plot = season_panel_alpha, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","season_panel_alpha.jpeg"), dpi=300, width=9, height=8, units="in")
+
+
+#ggsave(plot = season_alpha_beta,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","season_alpha_beta.jpeg"), dpi=300, width=9, height=8, units="in")
 ```
 
 
@@ -604,10 +611,15 @@ richness_tissuetype
 
 wasting_alpha<-ggarrange(richness_wastingcat, richness_tissuetype, common.legend=TRUE, ncol=1, align = "v", legend = "right", labels = c("A", "B"))
 
+#not combined with another figure so no need to save as RDS file
 wasting_alpha
 
-ggsave(plot = wasting_alpha, "wasting_alpha.jpeg", dpi=300, width=9, height=7, units="in")
 
+#saving locally to computer
+ggsave(plot = wasting_alpha, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","wasting_alpha.jpeg"), dpi=300, width=9, height=7, units="in")
+
+
+#ggsave(plot = wasting_alpha,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","wasting_alpha.jpeg"), dpi=300, width=9, height=7, units="in")
   
 ```
 
