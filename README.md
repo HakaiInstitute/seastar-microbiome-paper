@@ -11,9 +11,6 @@ This repository contains field and genomic data pertaining to the manuscript ent
 ```
 Prentice, C., Froese, T., Olson, A., Sadlier-Brown, G., Pontier, O., Monteith, Z., VanMaanen, D., Bachen, K., Earle, H., Janusson, C., Clemente-Carvalho, R., Gehman, A., & Kellogg, C. (2026). Sea star microbiome data from 16S amplicon sequencing associated with rocky intertidal sites on Calvert and Quadra Islands (v1.0). Hakai Institute. https://doi.org/10.21966/0xvh-1318
 ```
-## Getting Started
-
-See issue [#1](/../../issues/1) for getting started steps. You can remove this section once the issue is complete.
 
 ## Method
 
