@@ -25,7 +25,7 @@ Link to any associated resources:
 
 -Hakai Metadata Catalogue Entry: https://doi.org/10.21966/0xvh-1318
 
--NCBI BioProject: 
+-NCBI BioProject:   https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1456220
 
 
 ## How to contribute
