@@ -4,8 +4,9 @@ output: html_document
 date: "2026-03-12"
 ---
 
-First we need to load the necessary files. 
+First we need to load the necessary files to create our phyloseq object
 ***Note that singletons were removed previously so are already taken out in these files.
+**We also removed swabs from sites and species not used in this paper from the metadata, as there were additional samples included in these sequencing runs that we did not end up focusing on here.
 
 ```{r load files}
 
@@ -224,7 +225,7 @@ table(sample_data(decontam_merged)$Host)
 
 ```
 
-Now do a final filtering of low read-count samples (i.e. similar to negs), and remove any remaining negative controls
+Now do a final filtering of low read-count samples (i.e. similar to negatives), and remove any remaining negative controls
 
 ```{r}
 
@@ -232,7 +233,7 @@ decontam_filter <- prune_samples(sample_sums(decontam_merged) >= 7000, decontam_
 decontam_filter
 
 decontam_filter_nonegs <- ps_filter(decontam_filter, SampleNeg != "Negative")
-decontam_filter_nonegs
+decontam_filter_nonegs  #11452 taxa and 1364 samples
 
 #saving this phyloseq object
 saveRDS(decontam_filter_nonegs, file = "C:/Users/Carolyn/Documents/intertidal-seastar-swabs/code/analysis chunks/decontam_filter_nonegs.rds")
@@ -259,6 +260,15 @@ decontam_filter_nonegs_prev <- prune_taxa(prev_prop >= 0.01, decontam_filter_non
 
 reads_post_prev <- data.table(as(sample_data(decontam_filter_nonegs_prev), "data.frame"),
                  TotalReads = sample_sums(decontam_filter_nonegs_prev), keep.rownames = TRUE)
+
+decontam_filter_nonegs_prev  #3839 taxa and 1364 samples
+
+ggplot(reads_post_prev , aes(x = rownames(reads_post_prev), y = TotalReads, color = Host)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Samples") +
+  ylab("Counts") +
+  ggtitle("Filtered data: Read counts per sample")
 
 #saving this phyloseq object
 
