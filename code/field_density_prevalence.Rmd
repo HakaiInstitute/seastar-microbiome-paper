@@ -73,6 +73,7 @@ dens_data <- dens_data %>%
   ))
 
 dens_data$date<-as.Date(dens_data$date)
+dens_data$date
 
 # Density plot - Calvert
 dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
@@ -97,7 +98,7 @@ dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
   scale_y_continuous(limits = c(0, 4.2),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
-  scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+    scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
   theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
 
   #theme(plot.title = ggtext::element_markdown(hjust = 0.5),
@@ -115,6 +116,10 @@ dens_calvert
 
 ```{r}
 # Density plot - Quadra
+
+#want to make x-axis same timeframe as Calvert data
+#2018-02-14 to 2025-11-05
+
 dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
              aes(x = date, y = density_2D, colour = scientific_name)) +
   geom_rect(data = subset(site_ranges, region == 'Quadra'),
@@ -137,11 +142,12 @@ dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
   scale_y_continuous(limits = c(0, 4.2),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
-  scale_x_date(date_breaks = '1 year', date_labels = '%Y') +
+  scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
   theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
 
-  
-dens_quadra  
+
+
+dens_quadra
 
 
 ```
@@ -152,11 +158,17 @@ dens_quadra
 dens_combined<-ggarrange(dens_calvert, dens_quadra,
           #labels = c("", ""),
           ncol = 2, nrow = 1,
-          common.legend = TRUE, legend="right")
+          common.legend = TRUE, legend="bottom")
 
 dens_combined
 
-ggsave(plot = dens_combined, filename = "dens_combined.jpeg", dpi=300, width=10, height=6, units="in")
+#saving locally to computer
+ggsave(plot = dens_combined, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","density_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+
+
+#ggsave(plot = dens_combined,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","density_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+
+
 ```
 
 
@@ -209,6 +221,7 @@ prev_plot_quadra<-ggplot(subset(prev_data, region == 'Quadra'),
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
+  scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
   theme_classic() + 
   scale_colour_manual(values = c("turquoise", "turquoise4", "palegreen2")) + 
   ggtitle("Quadra") +
@@ -236,13 +249,15 @@ prev_plot_calvert<-ggplot(subset(prev_data, region == 'Calvert'),
        y = 'Wasting Prevalence',
        colour = 'Site') +
   ylim(0,(max(prev_data$prev)+0.01)) + 
+  scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
   theme_classic() + 
-  scale_colour_manual(values = c("orange", "orangered3", "lightcoral")) +  
+  scale_colour_manual(values = c( "#C97A00", "#FDAE6B", "#E6550D")) +  
   ggtitle("Calvert") +
   theme(strip.background = element_blank()) +
   theme(plot.title = element_text(size = 14))
 
 prev_plot_calvert
+
 
 ```
 
@@ -255,6 +270,11 @@ prev_combined<-ggarrange(prev_plot_calvert, prev_plot_quadra,
 
 prev_combined
 
-ggsave(plot = prev_combined, "prev_combined.jpeg", dpi=300, width=10, height=6, units="in")
+#saving locally to computer
+ggsave(plot = prev_combined, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","prev_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+
+
+#ggsave(plot = prev_combined,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","prev_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+
 ```
 
