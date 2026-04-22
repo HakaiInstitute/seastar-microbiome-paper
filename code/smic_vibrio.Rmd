@@ -96,6 +96,75 @@ stars_vibrio_plot2<-ggplot(seastars_vibrio, aes(x = Month, y = Abundance, color 
 stars_vibrio_plot2
 
 
+#### just pisaster and seawater, no derm
+
+pioc_sw_ps <-  decontam_filter_nonegs %>%
+  ps_filter(Host %in% c("Pisaster ochraceus", "Seawater"))
+
+pioc_sw_ps_rel <- transform_sample_counts(pioc_sw_ps, function(x) x / sum(x))
+
+pioc_sw_ps_glom <-speedyseq::tax_glom(pioc_sw_ps_rel, taxrank = "Species")
+
+pioc_sw_vibrio <- subset_taxa(pioc_sw_ps_glom, Species == "Vibrio_pectenicida")
+
+#Melt to long format
+pioc_sw_vibrio_df <- psmelt(pioc_sw_vibrio)
+
+pioc_sw_vibrio_df$Season <- factor(
+  pioc_sw_vibrio_df$Season,
+  levels = c("Winter", "Spring", "Summer", "Fall"))
+
+#make a plot with all the data, non-transformed 
+pioc_sw_vibrio_plot<-ggplot(pioc_sw_vibrio_df, aes(x = Host, 
+               y = Abundance, 
+               color = Host)) +
+  #eom_boxplot() +
+  geom_jitter(width = 0.2, alpha = 0.4) +
+  theme_classic() +
+  ylab("Vpec Relative Abundance") +
+  #facet_wrap(~SiteType) +
+  scale_color_manual(values = c("#AD002AFF", "#925E9FFF", "#0099B4FF")) + 
+  theme(legend.position = "none") +
+  scale_x_discrete(labels = c("D. imbricata", "P. ochraceus", "Seawater")) +
+  theme(strip.background = element_blank()) +
+  theme(axis.title.x = element_blank())+
+  ggtitle("Host")  
+#scale_y_sqrt()
+
+stars_vibrio_plot
+
+#trying a square root transformation on the x-axis and plotting through time
+
+pioc_sw_vibrio_df$Month <- factor(
+  pioc_sw_vibrio_df$Month,
+  levels = c("1", "2", "5", "6", "7", "8", "9", "11", "12"))
+
+pioc_sw_vibrio_df$Host <- recode(pioc_sw_vibrio_df$Host,
+  "Pisaster ochraceus"     = "italic(P.~ochraceus)",
+  "Seawater"               = "Seawater"
+)
+
+species_labels_2 <- c(
+  "Pisaster ochraceus"     = "italic(P.~ochraceus)",
+  "Seawater"               = "Seawater")
+
+pioc_sw_vibrio_plot2<-ggplot(pioc_sw_vibrio_df, aes(x = Month, y = Abundance, color = Season)) +
+  #geom_boxplot() +
+  geom_jitter(aes(shape = SiteType), width = 0.3, alpha = 0.7) +
+  theme_classic() +
+ scale_color_manual(values = c("#05668D", "#00A896", "#9DD9D2", "#FE5E41")) +
+  scale_shape_manual(values = c(8, 15), name = "Region")+
+  ylab("sqrt(Vpec Relative Abundance)") +
+  facet_wrap(~Host,  labeller = label_parsed) +
+  theme(strip.background = element_blank())  + scale_y_sqrt()
+  #guides(color = "none")  
+
+
+pioc_sw_vibrio_plot2
+
+
+ggsave(plot = pioc_sw_vibrio_plot2, filename = file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures", "pisaster_seawater_vibrio.jpeg"), dpi=300, width=8, height=5, units="in")
+
 
 ```
 
