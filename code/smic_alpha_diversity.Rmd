@@ -84,7 +84,8 @@ alpha_host_boxplot<-richness_host %>%
   
 alpha_host_boxplot     #boxplot version
  
-saveRDS(alpha_host_boxplot, file = "alpha_host_boxplot.rds")
+saveRDS(alpha_host_boxplot, file = "C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/alpha_host_boxplot.rds")
+
 
 ```
 
@@ -143,7 +144,7 @@ print(doc_hostregion, target = "hostregion_table.docx")
 
 ```
 
-########### SEASONAL ALPHA DIVERSITY   ######################
+########### SEASONAL ALPHA DIVERSITY ######################
 
 ```{r alpha diversity by SEASON, seawater}
 
@@ -395,8 +396,9 @@ season_panel_alpha<-ggarrange(seawater_seasonal, derm_seasonal, pis_seasonal, co
 
 season_panel_alpha
 
+getwd()
 #save panel to combine with beta diversity seasonal plot
-saveRDS(season_panel_alpha, file = "season_panel_alpha.rds")
+saveRDS(season_panel_alpha, file = "C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/season_panel_alpha.rds")
 
 #saving locally to computer
 ggsave(plot = season_panel_alpha, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","season_panel_alpha.jpeg"), dpi=300, width=9, height=8, units="in")
