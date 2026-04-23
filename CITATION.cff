@@ -1,14 +1,173 @@
-cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+abstract: "This data package contains field and genomic data pertaining to the manuscript\
+  \ 'Regional, seasonal and wasting disease related patterns in the dermal microbiomes\
+  \ of two intertidal sea star species from a multi-year time series'. \n\nThis data\
+  \ package is a component of the Hakai Institute\u2019s Nearshore research and monitoring\
+  \ program, designed to capture change in rocky intertidal habitats. As part of the\
+  \ on-going rocky intertidal surveys on both Calvert and Quadra Islands, dermal swab\
+  \ samples were collected for three years within each region for a more detailed\
+  \ investigation of the microbiomes associated with two sea star species - the ochre\
+  \ star Pisaster ochraceus and the leather star Dermasterias imbricata. Seawater\
+  \ samples were also collected adjacent to the site during each survey to examine\
+  \ background microbial communities. DNA was extracted from swab and seawater samples\
+  \ and the V4 region of the 16S rRNA gene was targeted for microbial community profiling.\
+  \ Data were then analyzed to examine patterns in microbial communities across the\
+  \ different sample types, regions, seasons and stages of wasting disease within\
+  \ P. ochraceus. \n\nThis data package is freely available to everyone, following\
+  \ the principles of equitable access and benefit sharing. However, we expect all\
+  \ data users to give attribution to the data providers (read our data license) and\
+  \ the use of these data should happen in the light of fair use, i.e.: 1) respect\
+  \ the data providers, and provide helpful feedback on data quality, and 2) communicate\
+  \ and/or collaborate with the providers if you are considering using this dataset\
+  \ for manuscripts or other forms of reporting."
 authors:
-- family-names: "YOUR_NAME_HERE"
-  given-names: "YOUR_NAME_HERE"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-- family-names: "Lisa"
-  given-names: "Mona"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-title: "hakai-dataset-repository-template"
-version: 1.0.0
-doi: 10.5281/zenodo.1234
-date-released: 2024-06-04
-url: "https://github.com/HakaiInstitute/hakai-dataset-repository-template"
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  email: carolyn.prentice@hakai.org
+  family-names: Prentice
+  given-names: Carolyn
+  orcid: https://orcid.org/0000-0002-9644-8496
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  email: tyrel.froese@hakai.org
+  family-names: Froese
+  given-names: Tyrel
+  orcid: https://orcid.org/0000-0002-6964-8353
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Olson
+  given-names: Angeleen
+  orcid: https://orcid.org/0000-0001-8443-1868
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Sadlier-Brown
+  given-names: Gillian
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Pontier
+  given-names: Ondine
+  orcid: https://orcid.org/0000-0003-1828-0576
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  email: zach.monteith@hakai.org
+  family-names: Monteith
+  given-names: Zachary
+  orcid: https://orcid.org/0000-0003-4963-8374
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: VanMaanen
+  given-names: Derek
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Bachen
+  given-names: Krystal
+  orcid: https://orcid.org/0000-0003-0886-157X
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Earle
+  given-names: Heather
+  orcid: https://orcid.org/0000-0002-1072-8025
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Janusson
+  given-names: Carly
+  orcid: https://orcid.org/0009-0002-8218-540X
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Clemente-Carvalho
+  given-names: Rute
+  orcid: https://orcid.org/0000-0001-6922-9418
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Gehman
+  given-names: Alyssa
+  orcid: https://orcid.org/0000-0003-0595-9950
+  website: https://www.hakai.org/
+- affiliation: Hakai Institute
+  city: Campbell River
+  country: CA
+  family-names: Kellogg
+  given-names: Colleen
+  orcid: https://orcid.org/0000-0003-4048-5316
+  website: https://www.hakai.org/
+- city: Campbell River
+  country: CA
+  name: Hakai Institute
+  website: https://www.hakai.org/
+- city: Vancouver
+  country: CA
+  name: Tula Foundation
+  website: https://tula.org
+cff-version: 1.2.0
+date-released: '2026-04-23'
+identifiers:
+- description: ca.cioos Unique Identifier
+  type: other
+  value: 33c8ce77-0674-4933-a305-01a25d253f70
+- description: Metadata record URL
+  type: url
+  value: https://catalogue.hakai.org/dataset/ca-cioos_33c8ce77-0674-4933-a305-01a25d253f70
+- description: DOI
+  type: doi
+  value: 10.21966/0xvh-1318
+- description: Metadata Form used to generate this record
+  type: url
+  value: https://hakaiinstitute.github.io/hakai-metadata-entry-form#/en/hakai/4TvAwNKXC7PkAi0TEZsZbbAzXfi1/-Oo1MBmr8fW1fputdBh6
+- description: 'Github repo: Data files and R code associated with the sea star microbiome
+    manuscript'
+  type: url
+  value: https://github.com/HakaiInstitute/seastar-microbiome-paper
+- description: '16S sequence data: Raw 16S sequence data'
+  type: url
+  value: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1456220
+keywords:
+- 16S sequencing
+- Animalia
+- Asteriidae
+- Asteroidea
+- Asteropseidae
+- Dermasterias
+- Dermasterias imbricata
+- Echinodermata
+- Forcipulatida
+- Pisaster
+- Pisaster ochraceus
+- Valvatida
+- abundance and biomass
+- benthic macrofauna
+- invertebrateAbundanceAndDistribution
+- microbeBiomassAndDiversity
+- microbiome
+- sea star wasting disease
+- taxonomy
+license: CC-BY-4.0
+license-url: https://creativecommons.org/licenses/by/4.0
+message: If you use this software, please cite it as below
+title: Sea star microbiome data from 16S amplicon sequencing associated with rocky
+  intertidal sites on Calvert and Quadra Islands
+type: Dataset
+url: https://catalogue.hakai.org/dataset/ca-cioos_33c8ce77-0674-4933-a305-01a25d253f70
+version: '1.0'
+
