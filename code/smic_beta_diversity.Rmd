@@ -468,6 +468,9 @@ wastingcat_pcoa_region<-ggarrange(pisaster_wastingcat_calvert, pisaster_wastingc
 
 wastingcat_pcoa_region
 
+#save plot to combine with others in another script
+saveRDS(wastingcat_pcoa_region, file = "C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/twastingcat_pcoa_region.rds")
+
 # Plot of Pisaster based on swab type  within each region
 pisaster_swabtype_quadra <-plot_ordination(
   physeq = pisaster_quadra_norm,

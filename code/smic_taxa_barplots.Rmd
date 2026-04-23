@@ -89,8 +89,7 @@ wastingcat_region<-ggplot(df_sum_pis_wasting, aes(x = WastingCategory,
 
 wastingcat_region
 
-#ggsave(plot = wastingscore_region, filename ="wasting_barplot.jpeg", dpi=300, width=8, height=5, units="in")
-
+saveRDS(wastingcat_region, file = "C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/wastingcat_region.rds")
 
 ```
 
@@ -147,21 +146,6 @@ tissuetype_region<-ggplot(df_sum_pis_swabtype, aes(x = DermisType2,
 
 tissuetype_region
 
-```
-
-Combine the taxa relative abundance plot with richness plot 
-
-```{r}
-
-richness_wasting_plot
-wastingscore_region
-
-
-wasting_panel<-ggarrange(richness_wasting_plot, wastingscore_region, common.legend=FALSE, ncol=1, align = "v", legend = "right", labels = c("a", "b"))
-
-wasting_panel
-
-ggsave("wasting_panel.pdf", dpi=300, width=10, height=8, units="in")
+saveRDS(tissuetype_region, file = "C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/tissuetype_region.rds")
 
 ```
-
