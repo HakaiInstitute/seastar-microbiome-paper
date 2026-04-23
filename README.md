@@ -1,10 +1,4 @@
-<div align='center'>
-    <a href='https://tula.org'><img height='75px' src=docs/logos/tula-logo.png /></a>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <a href='https://hakai.org'><img height='75px' src=docs/logos/hakai-logo.png /></a>
-</div>
-
-# HakaiInstitute/seastar-microbiome-paper
+# Sea star microbiome data from 16S amplicon sequencing associated with rocky intertidal sites on Calvert and Quadra Islands (v1.0)
 
 This repository contains field and genomic data pertaining to the manuscript entitled 'Regional, seasonal and wasting disease related patterns in the dermal microbiomes of two intertidal sea star species from a multi-year time series'. 
 
@@ -21,7 +15,7 @@ This work is a component of the Hakai Institute’s Nearshore research and monit
 
 See the data dictionary file for a complete description of data variables, units and descriptions.
 
-Link to any associated resources:
+Additional resources:
 
 -Hakai Metadata Catalogue Entry: https://doi.org/10.21966/0xvh-1318
 
