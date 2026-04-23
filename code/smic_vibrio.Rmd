@@ -162,8 +162,8 @@ pioc_sw_vibrio_plot2<-ggplot(pioc_sw_vibrio_df, aes(x = Month, y = Abundance, co
 
 pioc_sw_vibrio_plot2
 
-
-ggsave(plot = pioc_sw_vibrio_plot2, filename = file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures", "pisaster_seawater_vibrio.jpeg"), dpi=300, width=8, height=5, units="in")
+#For Alyssa
+#ggsave(plot = pioc_sw_vibrio_plot2, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures", "pisaster_seawater_vibrio.jpeg"), dpi=300, width=8, height=5, units="in")
 
 
 ```
@@ -277,7 +277,13 @@ vibrio_panel<-ggarrange(stars_vibrio_plot2, pis_vibrio_plot4, pis_vibrio_plot3, 
 
 vibrio_panel
 
-ggsave("vibrio_panel.jpeg", dpi=300, width=9, height=8, units="in")
+#saving locally to computer
+ggsave(plot = vibrio_panel, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","vibrio_panel.jpeg"), dpi=300, width=9, height=8, units="in")
+
+
+#ggsave(plot = vibrio_panel,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","vibrio_panel.jpeg"), dpi=300, width=9, height=8, units="in")
+
+
 
 
 ```
