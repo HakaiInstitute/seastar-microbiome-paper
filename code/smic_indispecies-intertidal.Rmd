@@ -163,7 +163,7 @@ attributes(host.indval.gen.v2)
 
 isa.genera.v2<-host.indval.gen.v2$sign
 
-write.csv(isa.genera.v2, "SMIC-multipatt_genera_indval_results.csv") #save the results
+#write.csv(isa.genera.v2, "SMIC-multipatt_genera_indval_results.csv") #save the results
 
 #### filter data frame for significant indicators ####
 #In order to be included we want to retain only indicators with a p value of 0.005 or less and a stat of 0.7 or higher.
@@ -259,7 +259,7 @@ smic_gen.ind_ave <- tibble(smic_isa.genusm) %>% group_by(OTU,Host, Phylum, Class
 #tidyr:: if unite doesn't work
 
 smic_gen.ind_ave
-write.csv(smic_gen.ind_ave, "SMIC-multipatt_genera_indval_results.csv")
+#write.csv(smic_gen.ind_ave, "SMIC-multipatt_genera_indval_results.csv")
 
 smic_gen.ind_ave <-  smic_gen.ind_ave %>% 
   mutate(Year_Season = paste(Year, Season, sep = "_")) %>% 
@@ -289,8 +289,6 @@ ggplot(aes(x = Season, y = GENIND, size = ave_abun, color = Class)) +
   ylab("")
 
 ind_genera_plot_season
-
-ggsave("SMIC_indicator_genera-bubbleplot_locationxhost-HEALTHY.pdf", last_plot(), width = 10, height =6)
 
 #and you can do so much more. these were just quick plots... could also do line plots with standard deviations
 
@@ -370,7 +368,7 @@ attributes(host.indval)
 
 isa.asv<-host.indval$sign
 
-write.csv(isa.asv, "SMIC-multipatt_ASV_indval_results.csv") #save the results
+#write.csv(isa.asv, "SMIC-multipatt_ASV_indval_results.csv") #save the results
 
 #### filter data frame for significant indicators ####
 #In order to be included we want to retain only indicators with a p value of 0.001 or less and a stat of 0.7 or higher. I just picked these settings but we can adjust if need be.
@@ -419,7 +417,7 @@ smic_species_tax_ind<-as.matrix(column_to_rownames(as.data.frame(smic_species_ta
 smic_isa.asv <- smicpf_sorted #rename original phyloseq object
 tax_table(smic_isa.asv) <- smic_species_tax_ind #update taxa table to include ISA
 
-write.csv(smic_species_tax_ind, "smic_species_tax_ind.csv")
+#write.csv(smic_species_tax_ind, "smic_species_tax_ind.csv")
 
 ```
 
