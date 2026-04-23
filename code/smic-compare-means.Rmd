@@ -292,9 +292,9 @@ Combining logchange plot, NMDS and top taxa barplot for Figure 5. Note that you 
 
 ```{r}
 #3 plots to be combined
-logchange_category
-wastingcat_pcoa_region
-wastingcat_region
+logchange_category #from code chunk above
+wastingcat_pcoa_region <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/wastingcat_pcoa_region.rds")
+wastingcat_region <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/wastingcat_region.rds")
 
 #want the logfold change plot to be larger along the left side and the other two stacked on the right
 
@@ -309,8 +309,11 @@ wasting_panel<-ggarrange(logchange_category, col2,
 
 wasting_panel
 
-ggsave(plot =wasting_panel, filename ="wasting_panel.jpeg", 
-       dpi=300, width=12, height=6, units="in")
+#saving locally to computer
+ggsave(plot = wasting_panel, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","wasting_panel.jpeg"), dpi=300, width=12, height=6, units="in")
+
+
+#ggsave(plot = wasting_panel, file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","wasting_panel.jpeg"), dpi=300,width=12, height=6, units="in")
 
 ```
 
@@ -505,7 +508,10 @@ Combining the same 3 plots but for tissue type (supplemental)
 
 ```{r}
 #3 plots to be combined
-logchange_tissue
+logchange_tissue   #from code chunk above
+tissuetype_pcoa_region <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/tissuetype_pcoa_region.rds")
+tissuetype_region <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/tissuetype_region.rds")
+
 tissuetype_pcoa_region
 tissuetype_region
 
@@ -522,22 +528,11 @@ wasting_panel_supp<-ggarrange(logchange_tissue, col2_supp, ncol = 2, labels = "A
 
 wasting_panel_supp
 
-ggsave(plot =wasting_panel_supp, filename ="wasting_panel_supp.jpeg", 
-       dpi=300, width=12, height=6, units="in")
-
-```
+#saving locally to computer
+ggsave(plot = wasting_panel_supp, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","wasting_panel_supp.jpeg"), dpi=300, width=9, height=8, units="in")
 
 
-
-#if we want to combine both log change plots
-
-```{r}
-
-logchange_panel<-ggarrange(logchange_category, logchange_tissue, ncol=1, align = "v", legend = "right", labels = c("A", "B"))
-
-logchange_panel
-
-ggsave("logchange_panel.jpeg", dpi=300, width=8, height=10, units="in")
+#ggsave(plot = wasting_panel_supp,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","wasting_panel_supp.jpeg"), dpi=300, width=12, height=6, units="in")
 
 ```
 
