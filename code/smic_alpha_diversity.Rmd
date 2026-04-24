@@ -23,6 +23,7 @@ library(dplyr)
 library(data.table)
 library(tidyr)
 library(RColorBrewer)
+library(tidyverse)
 
 ```
 
@@ -89,7 +90,7 @@ saveRDS(alpha_host_boxplot, file = "C:/Users/Carolyn/Documents/seastar-microbiom
 
 ```
 
-#Mixed effects models to test relative effects of host and region on alpha diversity (inv simpson index)
+Generalized linear models to test relative effects of host and region on alpha diversity (inv simpson index)
 
 ```{r}
 library(stats)
@@ -140,7 +141,7 @@ hostregion_table <- flextable(hostregion_sel_df) %>%
 library(officer)
 doc_hostregion <- read_docx()
 doc_hostregion <- body_add_flextable(doc_hostregion, hostregion_table)
-print(doc_hostregion, target = "hostregion_table.docx")
+#print(doc_hostregion, target = "hostregion_table.docx")
 
 ```
 
@@ -200,7 +201,7 @@ seawater_seasonal
 ```
 
 
-```{r mixed effect model richness seawater}
+```{r GLM richness seawater}
 
 richness_seawater
 
@@ -216,7 +217,7 @@ mod4_nullseason_sw<- glm(InvSimpson~1, data = richness_seawater, family = Gamma(
 sim_res_sw <- simulateResiduals(mod3_seasonregion_sw)
 plot(sim_res_sw)
 plot(mod3_regionhost)
-#Check R2 fit of the models
+
 
 #comparing all 4 models
 season_sel<-model.sel(mod1_season_sw, mod2_region_sw, mod3_seasonregion_sw, mod4_nullseason_sw, rank = "AICc", beta = "sd")
@@ -224,6 +225,8 @@ season_sel<-model.sel(mod1_season_sw, mod2_region_sw, mod3_seasonregion_sw, mod4
 season_sel
 
 library(performance)
+
+#Check R2 fit of the models
 
 r2(mod3_seasonregion_sw)
 r2(mod1_season_sw)
@@ -244,7 +247,7 @@ ft_season_sw <- flextable(season_sel_df) %>%
 library(officer)
 doc_season_sw <- read_docx()
 doc_season_sw<- body_add_flextable(doc_season_sw, ft_season_sw)
-print(doc_season_sw, target = "season_seawater_table.docx")
+#print(doc_season_sw, target = "season_seawater_table.docx")
 
 ```
 
@@ -294,7 +297,7 @@ derm_seasonal
 ```
 
 
-```{r mixed effects model derm season}
+```{r GLM derm season}
 richness_derm
 
 mod1_season_derm<-glm(InvSimpson~Season, data = richness_derm, family = Gamma(link = "log"))
@@ -337,7 +340,7 @@ ft_season_derm <- flextable(derm_sel_df) %>%
 # Export to Word
 doc_season_derm <- read_docx()
 doc_season_derm<- body_add_flextable(doc_season_derm, ft_season_derm)
-print(doc_season_derm, target = "season_derm_table.docx")
+#print(doc_season_derm, target = "season_derm_table.docx")
 
 ```
 
@@ -408,7 +411,7 @@ ggsave(plot = season_panel_alpha, filename = file.path("C:/Users/Carolyn/Desktop
 ```
 
 
-```{r mixed effects model pis season}
+```{r GLM pis season}
 
 richness_pis
 
@@ -497,7 +500,7 @@ richness_wasting_plot
 ```
 
 
-```{r mixed effects model pisaster wasting score}
+```{r GLM pisaster wasting score}
 richness_wasting
 
 mod1_wasting_pisw<-glm(InvSimpson~WastingCategory, data = richness_wasting, family = Gamma(link = "log"))
