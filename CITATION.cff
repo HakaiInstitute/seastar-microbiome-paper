@@ -114,12 +114,6 @@ authors:
   website: https://www.hakai.org/
 - city: Campbell River
   country: CA
-  name: Hakai Institute
-  website: https://www.hakai.org/
-- city: Vancouver
-  country: CA
-  name: Tula Foundation
-  website: https://tula.org
 cff-version: 1.2.0
 date-released: '2026-04-23'
 identifiers:
@@ -167,7 +161,7 @@ license-url: https://creativecommons.org/licenses/by/4.0
 message: If you use this software, please cite it as below
 title: Sea star microbiome data from 16S amplicon sequencing associated with rocky
   intertidal sites on Calvert and Quadra Islands
-type: Dataset
+type: dataset
 url: https://catalogue.hakai.org/dataset/ca-cioos_33c8ce77-0674-4933-a305-01a25d253f70
 version: '1.0'
 
