@@ -112,8 +112,7 @@ authors:
   given-names: Colleen
   orcid: https://orcid.org/0000-0003-4048-5316
   website: https://www.hakai.org/
-- city: Campbell River
-  country: CA
+
 cff-version: 1.2.0
 date-released: '2026-04-23'
 identifiers:
