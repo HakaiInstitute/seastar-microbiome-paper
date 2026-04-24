@@ -7,7 +7,7 @@ date: "2026-03-14"
 ```{r}
 
 #read in the required QC'ed phyloseq object
-decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs.rds")
+decontam_filter_nonegs <- readRDS("C:/Users/Carolyn/Documents/seastar-microbiome-paper/code/decontam_filter_nonegs_prev.rds")
 
 ```
 
