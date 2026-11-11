@@ -24,6 +24,9 @@ library(data.table)
 library(tidyr)
 library(RColorBrewer)
 library(tidyverse)
+library(iNEXT)
+library(cowplot)
+
 
 ```
 
@@ -89,6 +92,144 @@ saveRDS(alpha_host_boxplot, file = "C:/Users/Carolyn/Documents/seastar-microbiom
 
 
 ```
+
+############### HOST ACCUMULATION CURVES ##################
+
+```{R accumulation curves using iNext}
+
+otu <- as(otu_table(healthy_all), "matrix")
+if (!taxa_are_rows(healthy_all)) otu <- t(otu)          # taxa as rows
+
+meta <- data.frame(sample_data(healthy_all))
+host <- as.character(meta[colnames(otu), "Host"])
+samples_by_host <- split(colnames(otu), host)
+
+##### 2. Incidence-based: accumulation across samples #### 
+inc_list <- lapply(samples_by_host, function(s) {
+  m <- (otu[, s, drop = FALSE] > 0) * 1
+  m[rowSums(m) > 0, , drop = FALSE]
+})
+
+set.seed(1)
+out_inc <- iNEXT(inc_list, q = 0, datatype = "incidence_raw", nboot = 100)
+
+##### 3. Abundance-based: rarefaction over reads #####
+
+#This version also computes Hill numbers: q = 0 is richness, q = 1 is exponential Shannon, and q = 2 is inverse Simpson.
+
+abun_list <- lapply(samples_by_host, function(s) {
+  x <- rowSums(otu[, s, drop = FALSE])
+  x[x > 0]
+})
+
+#this did not complete sadly...
+set.seed(1)
+out_abun <- iNEXT(abun_list, q = c(0, 1, 2), datatype = "abundance",
+                  knots = 40, nboot = 50)
+
+
+#### 4. Plots ####
+
+# ggiNEXT() makes three curve types. Solid lines show interpolation, dashed lines show extrapolation, and ribbons show 95% CIs.
+
+
+# Type 1: sample-size-based accumulation / rarefaction
+accum<-ggiNEXT(out_inc, type = 1) + theme_bw() +
+  labs(x = "Number of samples", y = "Cumulative ASVs") 
+
+A<-accum + #add custom colours
+  scale_color_manual(values=c("#AD002AFF", "#925E9FFF", "#0099B4FF"))+
+  scale_fill_manual(values=c("#AD002AFF", "#925E9FFF", "#0099B4FF")) + 
+  theme(legend.position = "bottom")
+
+A$layers[[2]]$aes_params$linewidth <- 1 #changing the line width
+A$layers[[1]]$aes_params$size <- 4 #changing the point size
+
+# Type 2: completeness (sample coverage) vs. sampling effort
+coverage<-ggiNEXT(out_inc, type = 2) + theme_bw()
+
+C<-coverage + #add custom colours
+  scale_color_manual(values=c("#AD002AFF", "#925E9FFF", "#0099B4FF")) +
+  scale_fill_manual(values=c("#AD002AFF", "#925E9FFF", "#0099B4FF"))
+
+C$layers[[2]]$aes_params$linewidth <- 1 #changing the line width
+C$layers[[1]]$aes_params$size <- 4 #changing the point size
+
+# # Type 3: coverage-based curves (richness vs. coverage)
+# ggiNEXT(out_inc, type = 3) + theme_bw()
+
+# # Abundance-based, one panel per Hill number
+# ggiNEXT(out_abun, type = 1, facet.var = "Order.q") + theme_bw()
+
+shared_legend <- get_legend(
+  A + theme(legend.box.margin = margin(0, 6, 6, 0))
+) #grab the bottom legend
+
+
+# 3. Combine the plots with legends hidden
+plot_row <- plot_grid(
+  A + theme(legend.position = "none"),
+  C + theme(legend.position = "none"),
+  labels = c("A", "B"),
+  label_fontface = "plain",
+  align = "vh"
+)
+
+# 4. Add the shared legend to the right
+accum_plots <- plot_grid(
+  plot_row, 
+  shared_legend, 
+  # ncol = 2,
+  nrow = 2,
+  rel_heights = c(1, 0.1) # Adjust 0.1 to fit your legend width
+)
+
+# Save
+  ggsave(
+  filename = "seastar-microbiome-paper/code/FigureS5.jpg",
+  plot = accum_plots,
+  width = 8,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
+
+
+```
+
+# another way to compute / plot an accumulation curve. did not end up using.
+```{R accumulation curve v2}
+
+library(phyloseq)
+library(vegan)
+library(ggplot2)
+
+otu <- as(otu_table(healthy_all), "matrix")
+if (taxa_are_rows(healthy_all)) otu <- t(otu)          # samples as rows
+
+meta <- data.frame(sample_data(healthy_all))
+host <- as.character(meta[rownames(otu), "Host"])  # matches row order
+
+acc <- lapply(unique(host), function(h) {
+  sub <- otu[host == h, , drop = FALSE]
+  sa  <- specaccum(sub, method = "random", permutations = 100)
+  data.frame(Host = h, Samples = sa$sites,
+             Richness = sa$richness, SD = sa$sd)
+})
+acc <- do.call(rbind, acc)
+
+ggplot(acc, aes(Samples, Richness, colour = Host, fill = Host)) +
+  geom_ribbon(aes(ymin = Richness - SD, ymax = Richness + SD),
+              alpha = 0.2, colour = NA) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values=c("#AD002AFF", "#925E9FFF","#0099B4FF")) +
+  scale_fill_manual(values=c("#AD002AFF", "#925E9FFF","#0099B4FF")) +
+  labs(x = "Number of samples", y = "Cumulative ASVs") +
+  theme_bw()
+
+
+```
+
 
 Generalized linear models to test relative effects of host and region on alpha diversity (inv simpson index)
 
