@@ -99,7 +99,8 @@ dens_calvert <- ggplot(subset(dens_data, region == 'Calvert'),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
     scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
-  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
+  xlab(NULL) +
+  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank(), strip.text = element_text(size = 11), legend.text = element_text(size = 11), axis.title.y = element_text(size = 11), title = element_text(size = 13))
 
   #theme(plot.title = ggtext::element_markdown(hjust = 0.5),
         #panel.grid.major.y = element_line(linetype = 'dotted'),
@@ -143,7 +144,8 @@ dens_quadra <- ggplot(subset(dens_data, region == 'Quadra'),
                      breaks = seq(0, 4, 1),
                      expand = c(0,0)) +
   scale_x_date(date_breaks = '1 year', date_labels = '%Y', limits = as.Date(c("2018-02-14", "2025-11-05"))) +
-  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank())
+    xlab(NULL) +
+  theme_classic() + facet_wrap(~site, ncol=1, axes = "all_x") +theme(strip.background = element_blank(), strip.text = element_text(size = 11), legend.text = element_text(size = 11), axis.title.y = element_text(size = 11), title = element_text(size = 13))
 
 
 
@@ -163,7 +165,9 @@ dens_combined<-ggarrange(dens_calvert, dens_quadra,
 dens_combined
 
 #saving locally to computer
-ggsave(plot = dens_combined, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","density_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+ggsave(plot = dens_combined, filename = "density_combined-rev.jpeg", dpi=300, width=10, height=6, units="in")
+
+# ggsave(plot = dens_combined, filename = "density_combined-rev.pdf", width=10, height=6, units="in")
 
 
 #ggsave(plot = dens_combined,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","density_combined.jpeg"), dpi=300, width=10, height=6, units="in")
@@ -225,8 +229,10 @@ prev_plot_quadra<-ggplot(subset(prev_data, region == 'Quadra'),
   theme_classic() + 
   scale_colour_manual(values = c("turquoise", "turquoise4", "palegreen2")) + 
   ggtitle("Quadra") +
-  theme(strip.background = element_blank()) +
-  theme(plot.title = element_text(size = 14))
+      xlab(NULL) +
+  theme_classic() +
+  theme(strip.background = element_blank(), strip.text = element_text(size = 11), legend.text = element_text(size = 11), axis.title.y = element_text(size = 11), title = element_text(size = 13))
+
   
 
 prev_plot_quadra
@@ -253,8 +259,10 @@ prev_plot_calvert<-ggplot(subset(prev_data, region == 'Calvert'),
   theme_classic() + 
   scale_colour_manual(values = c( "#C97A00", "#FDAE6B", "#E6550D")) +  
   ggtitle("Calvert") +
-  theme(strip.background = element_blank()) +
-  theme(plot.title = element_text(size = 14))
+ xlab(NULL) +
+  theme_classic() +
+  theme(strip.background = element_blank(), strip.text = element_text(size = 11), legend.text = element_text(size = 11), axis.title.y = element_text(size = 11), title = element_text(size = 13))
+
 
 prev_plot_calvert
 
@@ -271,7 +279,9 @@ prev_combined<-ggarrange(prev_plot_calvert, prev_plot_quadra,
 prev_combined
 
 #saving locally to computer
-ggsave(plot = prev_combined, filename = file.path("C:/Users/Carolyn/Desktop/Paper Figures","prev_combined.jpeg"), dpi=300, width=10, height=6, units="in")
+ggsave(plot = prev_combined, filename ="prev_combined-rev.jpeg", dpi=300, width=8, height=6, units="in")
+
+# ggsave(plot = prev_combined, filename ="prev_combined-rev.pdf", dpi=300, width=10, height=6, units="in")
 
 
 #ggsave(plot = prev_combined,file.path("C:/Users/Carolyn/Documents/seastar-microbiome-paper/figures","prev_combined.jpeg"), dpi=300, width=10, height=6, units="in")
