@@ -1,0 +1,80 @@
+Dealing with SMIC Taxonomy files. 
+
+1. Manually check the unknown or bacteria only (no phylum annotation) ASVs, as some are very abundant and have previously been found to be related to Spirochaetes. 
+
+2. Update taxonomy file to reflect this. 
+Aug 2025 - the most abundant, not well annotated ASVs are a 94% match to a Spirochaetia MAG. These ASVs are: 
+04c699fe07e29709d6a056f2c0496b1a
+dacb445edd1338dbb780603276bca504
+c1f613602fe92e3b465ab7e660b774e6
+e612945e60d340140da83e70b5c70d7c
+3e7dd7d0a0d2f03748a266c6b82b3b1e
+1b5deeeec0d53ce8b76a06fd0ae4de6e
+b0386d659e13063207a7deb5201bda33
+bf99689bbe6f5c050d64b967056d99b8
+67692c7e7c0cef7efb727fa865eef873
+95029bfd65a18da074030b570f749152
+
+Annotation should be: 
+
+Bacteria	Spirochaetota	Spirochaetia
+
+
+3. Vibrio-related stuff
+With initial annotations with the Silva database, V pec is not picked up for some reason (I checked and Vibrio pectinicida is in the Silva NR database so it hypothetically should have annotated, but alas. So, I BLASTed all the ASVs against V pec. ... or maybe it was just the Vibrionaceae ... but still). 5 ASVs are 99.6-100% related to Vibrio pectinicida and when I double check by BLASTing them against all of NCBI they still come back as V Pec above all else. So, we updated the annotations for these accordingly.
+
+ASVID / Top Hit / Percent identity
+09c433486ac15b34f7ce601a5aa29086	Vibrio pectenicida strain LMG 19642	100
+de05207a32df822bee2d31d1a8f72d05	Vibrio pectenicida strain LMG 19642	99.605
+bcac6553ba27e04044496a8dcc52a7a6	Vibrio pectenicida strain LMG 19642	99.605
+cc06bfc4d22ed95c6eb11f1e55ed49e5	Vibrio pectenicida strain LMG 19642	99.605
+ad523c3be6a339fbbdbeda1f5cb49825	Vibrio pectenicida strain LMG 19642	100
+		
+
+The above manual edits have been made to smic_runs1to8_gg2_taxonomy.csv and smic_runs1to8_silva138-1_taxonomy.csv on the Google Drive in SMIC-Processed-Datat/runs1to8/
+		
+These ASVs (and other Vibrio) are closely related to V Pec but when you just BLAST them alone they hit more closely (100%) to other Vibrio species. We could potentially dig into that more if we'd like. (i did see a couple V. parahaemolyticus ... which are also pathogenic). Just leave as Vibrio for now. 
+9fa8e183014370556535b776967db442	Vibrio pectenicida strain LMG 19642	97.61
+8a37ea4366cf91a9e38ce105fd18584f	Vibrio pectenicida strain LMG 19642	97.233
+f4d85cce94dd3d4582222d80df7671f5	Vibrio pectenicida strain LMG 19642	97.233
+959a788e6fb7de49607dbd35b4083062	Vibrio pectenicida strain LMG 19642	98.008
+011b56e090f8007f827e5b9cd0b38c5f	Vibrio pectenicida strain LMG 19642	97.628
+d8f3b3c0125fa99af9bada24a9a23bf0	Vibrio pectenicida strain LMG 19642	97.244
+0429a8a999c3238e12bbfaa1714d385e	Vibrio pectenicida strain LMG 19642	97.244
+e56efdf517cac669ee9383c6a60fb103	Vibrio pectenicida strain LMG 19642	97.638
+43bf2e05902a9f38eb400647f5b1e0a0	Vibrio pectenicida strain LMG 19642	97.628
+578ad1130f01ff55783a3eabcb8c1a8f	Vibrio pectenicida strain LMG 19642	97.244
+3951a41ce20a4cd95ee997985379c879	Vibrio pectenicida strain LMG 19642	97.233
+eb6d1b3f660fe44931d3fc9929d71839	Vibrio pectenicida strain LMG 19642	97.628
+256e78742fe26402cf72bdbe8cced009	Vibrio pectenicida strain LMG 19642	97.628
+
+
+
+4. Many of the other 'bacteria' only ASVs are actually likely to be mitochondria or 18S reads that did not get annotated as much using Silva or GG but when I blasted them against the NCBI NR database ... at lot of hits were to phytoplankton and apicomplexans (parasites ...Cephaloidophora cf. communi; that was pretty frequent. maybe should look into this guy a bit more.). 
+
+So it will be safest to remove the following ASVs from the dataset.
+
+Those ASVs that have an 'unknown' or 'bacteria' only annotation as we cannot confirm if they are truly bacteria or unannotated mitochondria or chloroplasts. Also prudent to remove Proteobacteria only and Alphaproteobacteria only ASV because we cannot confirm or deny if they are mitochondria that just are not annotated.
+
+How to do this in R:
+
+smic_fix<- smic %>%
+ tax_fix(
+  min_length = 4,
+  unknowns = c("", "NA","unknown","uncultured","unassigned"),
+  sep = " ", anon_unique = TRUE,
+  suffix_rank = "classified"
+ )
+
+
+#get rid of uninformative groups
+smic0<-smic_fix %>% tax_select(tax_list = "Unassigned Domain", deselect = TRUE) %>% tax_select(tax_list = "Bacteria Domain", deselect = TRUE) #12941 taxa and 2015 samples
+
+#we also want to get rid of Proteobacteria Phylum (class) and Alphaproteobacteria Class (family) as these unknown reads could be mitochondrial. I wonder if we should also get rid of Cyanobacteriia Class as it could be unassigned chloroplasts? Think about this.
+
+smic1<-smic0 %>% tax_select(tax_list = "Proteobacteria Phylum", deselect = TRUE) %>% tax_select(tax_list = "Alphaproteobacteria Class", deselect = TRUE)
+
+
+I suggest to do this right after making your phyloseq object and before decontamination.
+
+
